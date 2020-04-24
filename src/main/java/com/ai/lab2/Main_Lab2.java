@@ -7,7 +7,8 @@ import java.io.FileNotFoundException;
 import java.util.*;
 
 import static com.ai.utils.RegexOperator.*;
-import static org.apache.commons.lang3.StringUtils.*;
+import static org.apache.commons.lang3.StringUtils.indexOf;
+import static org.apache.commons.lang3.StringUtils.substring;
 
 public class Main_Lab2 {
 
@@ -22,39 +23,16 @@ public class Main_Lab2 {
         Scanner sc = new Scanner(new File(Constant.small_example_for_operators));
 
         ArrayList<String> listOfPremises = new ArrayList<>();
+        ArrayList<String> normalAndCNFResults = new ArrayList<>();
+
         while (sc.hasNext()) {
             String line = sc.nextLine();
             if (line.startsWith("#")) continue;
+            if (line.trim().isEmpty()) continue;
             listOfPremises.add(line);
-//            splitLine = line.split(" {2}");
-
-//            if (line.contains("(") && line.contains(")")) {
-//                String[] splitMe = line.split("[\\\\(|)]");
-//
-//                String[] textInsideParenthesisT = substringsBetween(line, "(", ")");
-//                if (textInsideParenthesisT.length > 1) {
-//                    String textInsideParenthesis = substringBetween(line, ")", "(");
-//                    for (String elementOrExpression : textInsideParenthesisT) {
-//                        checkForOperators(line, elementOrExpression);
-//                    }
-//
-////                    checkForOperators(line, textInsideParenthesis);
-//                    logicalElAndOperator.entrySet().size();
-//                    operators.clear();
-//                    logicalElAndOperator.clear();
-//                }
-//
-//            } else {
-//                String element = splitLine[0];
-//
-//                checkForOperators(line, element);
-//                operators.clear();
-//                logicalElAndOperator.clear();
-//            }
         }
 
         String lastElem = listOfPremises.get(listOfPremises.size() - 1);
-
 
         for (String currentPremise : listOfPremises) {
             ArrayList<LogicalElement> elementsToCompare = new ArrayList<>();
@@ -74,14 +52,11 @@ public class Main_Lab2 {
                 else if (currentPremise.contains(implyOperator)) element.setOperator(implyOperator);
                 else if (currentPremise.contains(equivalent)) element.setOperator(equivalent);
                 if (elementsToCompare.size() == 2) {
-                    currentPremise = cnfConvert(currentPremise, lastElem, elementsToCompare, element.getOperator());
-                    if (currentPremise.contains(doubleNegationOp)) {
-                        workWithDoubleNegation(currentPremise, element.getOperator());
-                    }
-
+                    currentPremise = cnfConvert(currentPremise, elementsToCompare, element.getOperator());
                 }
                 promiseWithElements.put(element.getOperator(), elementsToCompare);
                 mapForCNF.put(currentPremise, promiseWithElements);
+                normalAndCNFResults.add(currentPremise);
             }
         }
 
@@ -95,6 +70,9 @@ public class Main_Lab2 {
         System.out.println(lastElem);
         System.out.println("=============");
 
+        for (String element : normalAndCNFResults) {
+            System.out.println(element);
+        }
 
     }
 
@@ -103,57 +81,193 @@ public class Main_Lab2 {
                 .split(s);
     }
 
-    private static String workWithDoubleNegation(String premise, String operator) {
+    private static String removeDoubleNegation(String premise) {
         if (premise.contains(openParenthesis) && premise.contains(closeParenthesis)) {
-            String[] textInsideParenthesisT = substringsBetween(premise, openParenthesis, closeParenthesis);
             int indexOfP = indexOf(premise, closeParenthesis);
-            String firstSubstring = substring(premise, 0, indexOfP + 1);
-            String secondSubstring = substring(premise, indexOfP + 1);
+            String firstSubstring = substring(premise, 0, indexOfP + 1).replace(doubleNegationOp, "");
+            String secondSubstring = substring(premise, indexOfP + 1).replace(doubleNegationOp, "");
 
-            List<String> compOper = Arrays.asList(textInsideParenthesisT);
-            ArrayList<String> updatableList = new ArrayList<>(compOper);
-            String firstElemFromInitialPremise = updatableList.get(0);
-            String secondElemFromInitialPremise = updatableList.get(1);
-
-            if (firstElemFromInitialPremise.contains(doubleNegationOp)) {
-                String[] elements = trimByOperator(firstElemFromInitialPremise, orOperator);
-                List<String> elemList = Arrays.asList(elements);
-                ArrayList<String> elemToAdjust = new ArrayList<>(elemList);
-                String firstElem = elemToAdjust.get(0);
-                String secondElem = elemToAdjust.get(1);
-                if (firstElem.contains(doubleNegationOp)) {
-                    firstElem.split(firstElem);
-                }
-            }
-            if (secondElemFromInitialPremise.contains(doubleNegationOp)) {
-                String[] elements = substringsBetween(secondElemFromInitialPremise, openParenthesis, closeParenthesis);
-
-            }
-
-//            switch (operator) {
-//                case orOperator:
-////                    code;
-//                case andOperator:
-////                    code;
-//                case equivalent:
-//                    if (secondSubstring.contains(andOperator)) {
-//                        updatableList.add(andOperator);
-//                        int indexOfOP = indexOf(secondSubstring, openParenthesis);
-//                        String withoutOperator = substring(secondSubstring, indexOfOP);
-//
-//                        premise = firstSubstring + updatableList.get(updatableList.size() - 1) + withoutOperator;
-//                    }
-//                case implyOperator:
-////                    code;
-//            }
+            premise = firstSubstring + secondSubstring;
+        } else if (!premise.contains(openParenthesis)) {
+            premise = checkOperator(premise, orOperator);
+            premise = checkOperator(premise, andOperator);
         }
+        return premise;
+    }
 
+    private static String checkOperator(String premise, String andOperator) {
+        if (premise.contains(andOperator)) {
+            String[] comparableOperators = trimByOperator(premise, andOperator);
+            String firstSubstring = comparableOperators[0].replace(doubleNegationOp, "");
+            String secondSubstring = comparableOperators[1].replace(doubleNegationOp, "");
+            premise = firstSubstring + andOperator + secondSubstring;
+            String s = "s";
+        }
         return premise;
     }
 
     private static String negationElement(String elem) {
         return negateTheValue + elem;
     }
+
+    public static String cnfConvert(String currentPremise,
+                                    ArrayList<LogicalElement> premises, String operator
+    ) {
+        LogicalElement firstElement = premises.get(0);
+        LogicalElement secondElement = premises.get(1);
+
+        if (operator.contains(equivalent)) {
+            //~ = negation of first elem = implication elim.
+            if (!firstElement.getElementName().contains(negateTheValue + openParenthesis)) {
+                currentPremise = makeEquivalent(firstElement, secondElement);
+                if (currentPremise.contains(doubleNegationOp)) {
+                    currentPremise = removeDoubleNegation(currentPremise);
+                }
+                if (currentPremise.contains(negateTheValue + openParenthesis)) {
+                    currentPremise = moveNegationOntoAtoms(currentPremise, operator);
+                }
+                int i = 0;
+            } else {
+                //~ = negation of first elem = implication elim.
+                int indexOfP = indexOf(currentPremise, negateTheValue + openParenthesis);
+                firstElement.setElementName(firstElement.getElementName().replace(negateTheValue + openParenthesis, ""));
+                secondElement.setElementName(secondElement.getElementName().replace(closeParenthesis, ""));
+                currentPremise = negateTheValue + openParenthesis + makeEquivalent(firstElement, secondElement) + closeParenthesis;
+                if (currentPremise.contains(doubleNegationOp)) {
+                    currentPremise = removeDoubleNegation(currentPremise);
+                }
+                if (currentPremise.contains(negateTheValue + openParenthesis)) {
+                    if (currentPremise.contains(closeParenthesis + orOperator + openParenthesis)) {
+                        currentPremise = moveNegationOntoAtoms(currentPremise, orOperator);
+
+                    } else if (currentPremise.contains(closeParenthesis + andOperator + openParenthesis)) {
+                        currentPremise = moveNegationOntoAtoms(currentPremise, andOperator);
+
+                    }
+                }
+            }
+
+        }
+        if (operator.contains(implyOperator)) {
+            //~ = negation of first elem = implication elim.
+            currentPremise = negationElement(firstElement.getElementName())
+                    + orOperator + secondElement.getElementName();
+            if (currentPremise.contains(doubleNegationOp)) {
+                currentPremise = removeDoubleNegation(currentPremise);
+            }
+
+            if (currentPremise.contains(negateTheValue + openParenthesis)) {
+                currentPremise = moveNegationOntoAtoms(currentPremise, operator);
+            }
+
+        }
+        if (currentPremise.contains(negateTheValue + openParenthesis)) {
+            currentPremise = moveNegationOntoAtoms(currentPremise, operator);
+        }
+
+
+        return currentPremise;
+    }
+
+    private static String makeEquivalent(LogicalElement firstElement, LogicalElement secondElement) {
+        return openParenthesis + negationElement(firstElement.getElementName())
+                + orOperator + secondElement.getElementName() + closeParenthesis
+                //conjuncts the 2 parenthesis
+                + andOperator +
+                //negates the second element has and or but also keeps the first
+                openParenthesis + negationElement(secondElement.getElementName())
+                + orOperator + firstElement.getElementName() + closeParenthesis;
+    }
+
+    private static String moveNegationOntoAtoms(String currentPremise, String operator) {
+        int indexOfP = indexOf(currentPremise, operator);
+        String firstSubstring = substring(currentPremise, 0, indexOfP);
+        String secondSubstring = substring(currentPremise, indexOfP);
+        String negatedOp = negateOperator(operator);
+        String firstString = null;
+        String secondString = null;
+        if (currentPremise.contains(closeParenthesis + orOperator + openParenthesis)) {
+            firstString = currentPremise.substring(currentPremise.indexOf(negateTheValue) + 2, currentPremise.indexOf(orOperator));
+            secondString = currentPremise.substring(currentPremise.indexOf(orOperator))
+                    .replace(orOperator, "").replace(closeParenthesis + closeParenthesis, closeParenthesis);
+
+            String s = "s";
+        } else if (currentPremise.contains(closeParenthesis + andOperator + openParenthesis)) {
+            firstString = currentPremise.substring(currentPremise.indexOf(negateTheValue) + 2, currentPremise.indexOf(andOperator));
+            secondString = currentPremise.substring(currentPremise.indexOf(andOperator))
+                    .replace(andOperator, "").replace(closeParenthesis + closeParenthesis, closeParenthesis);
+            String[] firstStringElements = firstString.split(orOperator);
+            String firstStringElement1 = negateTheValue + firstStringElements[0].replace(openParenthesis, "");
+            String firstStringElement2 = negateTheValue + firstStringElements[1].replace(closeParenthesis, "");
+
+            String[] secondStringElements = secondString.split(orOperator);
+            String secondStringElement1 = negateTheValue + secondStringElements[0].replace(openParenthesis, "");
+            String secondStringElement2 = negateTheValue + secondStringElements[1].replace(closeParenthesis, "");
+
+            String firstNegatedAtom = firstStringElement1 + andOperator + firstStringElement2;
+            String secondNegatedAtom = secondStringElement1 + andOperator + secondStringElement2;
+
+            currentPremise = openParenthesis + firstNegatedAtom + closeParenthesis + negatedOp + openParenthesis + secondNegatedAtom + closeParenthesis;
+
+            if (currentPremise.contains(doubleNegationOp)) {
+                currentPremise = removeDoubleNegation(currentPremise);
+            }
+
+            String s = "s";
+        } else {
+            String firstNegatedAtom = firstSubstring.replace(openParenthesis, "");
+            String secondNegatedAtom = negateTheValue + secondSubstring.replace(closeParenthesis, "").replace(operator, "");
+
+            currentPremise = firstNegatedAtom + negatedOp + secondNegatedAtom;
+            int i = 9;
+        }
+        return currentPremise;
+    }
+
+    private static String negateOperator(String operator) {
+        if (operator.equals(orOperator)) {
+            operator = andOperator;
+        } else if (operator.equals(andOperator)) operator = orOperator;
+        return operator;
+    }
+
+
+//    public static boolean functionPlResolution(LinkedList<Formula> premises, String regex, String endGoal) {
+//        LinkedList<Formula> clauses = cnfConvert(premises && negationElement(endGoal));
+//        LinkedList<Formula> newListOfClauses = new LinkedList<>();
+//
+//        if (regex.contains(implyOperator)) {
+//            return !firstElement.getTorF() || secondElement.getTorF(); //~ = negation of first elem = implication elim.
+//        } else if (regex.contains(equivalent)) {
+//            return (firstElement.getTorF() && secondElement.getTorF())
+//                    || (!firstElement.getTorF() && !secondElement.getTorF()); //"=" <=> equivalent.
+//        }
+//
+//
+////        foreach(c1, c2) in selectClasuses (clauses) {
+////                LinkedList < Formula > resolvents = plResolve(c1, c2);
+////
+////        if (NIL apartine resolvents)return true;
+////        newListOfClauses = newListOfClauses.add(resolvents);
+////        }
+////        if (newListOfClauses is inOrEquals clauses)return false;
+////        clauses = clauses.add(newListOfClauses)
+//        return true;
+//    }
+
+    public void bla() {
+//        k =[] - empty list
+//        O/ taiet = empty set;
+//if length list/sets is different return null
+//if(k1 is variable) - can be replaced with w/ever return substitution where k2 replaces k1
+//        if k1 is element of k2  it tries to replace something with itself
+//        (replaces k1-variable with a term  k2 that contains k1then return null
+//        vice-versa for k2
+//if neither k1 nor k2 is variable  return null
+
+
+    }
+
 
     private static void checkForOperators(String line, String elementOrExpression) {
         if (elementOrExpression.contains(orOperator)) {
@@ -197,65 +311,4 @@ public class Main_Lab2 {
         return checkOperators;
     }
 
-    public static String cnfConvert(String currentPremise, String endGoal
-            , ArrayList<LogicalElement> premises, String operator
-    ) {
-        LogicalElement firstElement = premises.get(0);
-        LogicalElement secondElement = premises.get(1);
-
-        if (operator.contains(equivalent)) {
-            //~ = negation of first elem = implication elim.
-            currentPremise = openParenthesis + negationElement(firstElement.getElementName())
-                    + orOperator + secondElement.getElementName() + closeParenthesis
-                    //conjuncts the 2 parenthesis
-                    + andOperator +
-                    //negates the second element has and or but also keeps the first
-                    openParenthesis + negationElement(secondElement.getElementName())
-                    + orOperator + firstElement.getElementName() + closeParenthesis;
-        }
-        if (operator.contains(implyOperator)) {
-            //~ = negation of first elem = implication elim.
-            currentPremise = negationElement(firstElement.getElementName())
-                    + orOperator + secondElement.getElementName();
-        }
-
-        return currentPremise;
-    }
-
-
-//    public static boolean functionPlResolution(LinkedList<Formula> premises, String regex, String endGoal) {
-//        LinkedList<Formula> clauses = cnfConvert(premises && negationElement(endGoal));
-//        LinkedList<Formula> newListOfClauses = new LinkedList<>();
-//
-//        if (regex.contains(implyOperator)) {
-//            return !firstElement.getTorF() || secondElement.getTorF(); //~ = negation of first elem = implication elim.
-//        } else if (regex.contains(equivalent)) {
-//            return (firstElement.getTorF() && secondElement.getTorF())
-//                    || (!firstElement.getTorF() && !secondElement.getTorF()); //"=" <=> equivalent.
-//        }
-//
-//
-////        foreach(c1, c2) in selectClasuses (clauses) {
-////                LinkedList < Formula > resolvents = plResolve(c1, c2);
-////
-////        if (NIL apartine resolvents)return true;
-////        newListOfClauses = newListOfClauses.add(resolvents);
-////        }
-////        if (newListOfClauses is inOrEquals clauses)return false;
-////        clauses = clauses.add(newListOfClauses)
-//        return true;
-//    }
-
-    public void bla() {
-//        k =[] - empty list
-//        O/ taiet = empty set;
-//if length list/sets is different return null
-//if(k1 is variable) - can be replaced with w/ever return substitution where k2 replaces k1
-//        if k1 is element of k2  it tries to replace something with itself
-//        (replaces k1-variable with a term  k2 that contains k1then return null
-//        vice-versa for k2
-//if neither k1 nor k2 is variable  return null
-
-
-    }
 }
