@@ -1,0 +1,6 @@
+~A V B
+~B V C
+A
+~B > C
+~A = B
+C

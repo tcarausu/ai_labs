@@ -1,0 +1,12 @@
+(A v B) v (A & B)
+A & B
+A & ~B
+~A & ~B
+A > B
+(~(~A v B) v (A & B))
+((A v B) v ~C) & ((A & ~B) v ~D) & ((~A v ~B) v ~C) & ((~A & B) v ~D)
+~A v B 
+A & B
+A & ~B
+~A & ~B
+A > B
