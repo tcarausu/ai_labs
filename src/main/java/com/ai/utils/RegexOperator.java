@@ -10,6 +10,8 @@ public class RegexOperator {
     public static final String negateTheValue = "~";
     public static final String openParenthesis = "(";
     public static final String closeParenthesis = ")";
+    public static final String NIL = "NIL";
+    public static final String nextPairs = "nextPairs";
 
 
 }
