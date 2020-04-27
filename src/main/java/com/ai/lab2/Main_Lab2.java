@@ -18,9 +18,10 @@ public class Main_Lab2 {
     private static ArrayList<Boolean> operators = new ArrayList<>();
 
     public static void main(String[] args) throws FileNotFoundException {
-//        Scanner sc = new Scanner(new File(Constant.small_ex_1));
-        Scanner sc = new Scanner(new File(Constant.small_ex_2));
+        Scanner sc = new Scanner(new File(Constant.small_ex_1));
+//        Scanner sc = new Scanner(new File(Constant.small_ex_2));
 //        Scanner sc = new Scanner(new File(Constant.small_ex_3));
+//        Scanner sc = new Scanner(new File(Constant.small_ex_4));
 
 //        Scanner sc = new Scanner(new File(Constant.small_example_for_operators));
 
@@ -112,6 +113,7 @@ public class Main_Lab2 {
                 System.out.println(lastElem + " is false. As '" + derivation + "' is the last value present");
                 break;
             }
+
             derivation = derivation(firstEl, secondEl);
 
             if (derivation != null && !derivation.equals(noMatchNextPairs) && !derivation.equals(NIL)) {
@@ -176,8 +178,8 @@ public class Main_Lab2 {
                     return noMatchNextPairs;
                 }
             } else if (firstClause.length() > 2) {
-                return retrieveElements(firstClause, secondClause, "",
-                        firstClause.contains(negateTheValue), firstClause.replace(negateTheValue, ""));
+                return retrieveElements(secondClause, firstClause, "",
+                        secondClause.contains(negateTheValue), firstClause.replace(negateTheValue, ""));
             }
         }
 
@@ -233,9 +235,9 @@ public class Main_Lab2 {
         }
 
         String[] expresionClauseElements = trimByOperator(expressionClause, operator);
-        String nameSecClauseFirstElem = null;
-        String nameSecClauseSecondElem = null;
-        String nameSecClauseThirdElem = null;
+        String nameSecClauseFirstElem;
+        String nameSecClauseSecondElem;
+        String nameSecClauseThirdElem;
         ArrayList<LogicalElement> elements = new ArrayList<>();
 
         if (expresionClauseElements.length == 2) {
@@ -263,7 +265,7 @@ public class Main_Lab2 {
             elements.add(secClauseFirstElem);
             elements.add(secClauseSecondElem);
 
-            return compareExpresionToSingleClause(elements);
+            return compareExpresionToSingleClause(elements, operator);
         }
         if (expresionClauseElements.length == 3) {
             nameSecClauseFirstElem = expresionClauseElements[0];
@@ -296,7 +298,7 @@ public class Main_Lab2 {
             elements.add(secClauseSecondElem);
             elements.add(secClauseThirdElem);
 
-            return compareExpresionToSingleClause(elements);
+            return compareExpresionToSingleClause(elements, operator);
         }
         return null;
 
@@ -385,13 +387,17 @@ public class Main_Lab2 {
                 elemAndNegation.get(1).getOperator() + elemAndNegation.get(1).getElementName();
     }
 
-    private static String compareExpresionToSingleClause(ArrayList<LogicalElement> elements) {
+    private static String compareExpresionToSingleClause(ArrayList<LogicalElement> elements, String operator) {
         String singleWithExpression = null;
         LogicalElement firstClause = elements.get(0);
         LogicalElement firstElementFromSecondClause = elements.get(1);
         LogicalElement secondElementFromSecondClause = elements.get(2);
         if (elements.size() == 3) {
+            //first with first element of clause
             if (firstClause.getElementName().equals(firstElementFromSecondClause.getElementName())) {
+
+                //a
+
                 if (firstClause.hasNegation() != firstElementFromSecondClause.hasNegation()) {
                     if (secondElementFromSecondClause.hasNegation()) {
                         singleWithExpression = negateTheValue + secondElementFromSecondClause.getElementName();
@@ -399,16 +405,37 @@ public class Main_Lab2 {
                         singleWithExpression = secondElementFromSecondClause.getElementName();
                     }
                 }
-            } else if (firstClause.getElementName().equals(secondElementFromSecondClause.getElementName())) {
+//                //a
+//                if (firstClause.hasNegation() == firstElementFromSecondClause.hasNegation()) {
+//                    if (secondElementFromSecondClause.hasNegation()) {
+//                        singleWithExpression = negateTheValue + secondElementFromSecondClause.getElementName();
+//                    } else {
+//                        singleWithExpression = secondElementFromSecondClause.getElementName();
+//                    }
+//                }
+            }
+            //first with second element of clause
+            else if (firstClause.getElementName().equals(secondElementFromSecondClause.getElementName())) {
+                //a
                 if (firstClause.hasNegation() != secondElementFromSecondClause.hasNegation()) {
                     if (firstElementFromSecondClause.hasNegation()) {
-                        return negateTheValue + firstElementFromSecondClause.getElementName();
+                        singleWithExpression = negateTheValue + firstElementFromSecondClause.getElementName();
                     } else {
-                        return firstElementFromSecondClause.getElementName();
+                        singleWithExpression = firstElementFromSecondClause.getElementName();
                     }
                 }
+//                //a
+//                if (firstClause.hasNegation() == secondElementFromSecondClause.hasNegation()) {
+//                    if (firstElementFromSecondClause.hasNegation()) {
+//                        singleWithExpression = negateTheValue + firstElementFromSecondClause.getElementName();
+//                    } else {
+//                        singleWithExpression = firstElementFromSecondClause.getElementName();
+//                    }
+//                }
             }
-        } else if (elements.size() == 4) {
+        }
+
+        else if (elements.size() == 4) {
             LogicalElement thirdElementFromSecondClause = elements.get(3);
 
             //first with first element of clause
@@ -422,9 +449,9 @@ public class Main_Lab2 {
                         singleWithExpression = secondElementFromSecondClause.getElementName();
                     }
                     if (thirdElementFromSecondClause.hasNegation()) {
-                        singleWithExpression = negateTheValue + thirdElementFromSecondClause.getElementName();
+                        singleWithExpression = singleWithExpression + operator + negateTheValue + thirdElementFromSecondClause.getElementName();
                     } else if (!thirdElementFromSecondClause.hasNegation()) {
-                        singleWithExpression = thirdElementFromSecondClause.getElementName();
+                        singleWithExpression = singleWithExpression + operator + thirdElementFromSecondClause.getElementName();
                     }
                 } else if (firstClause.hasNegation() == firstElementFromSecondClause.hasNegation()) {
                     if (secondElementFromSecondClause.hasNegation()) {
@@ -433,9 +460,9 @@ public class Main_Lab2 {
                         singleWithExpression = secondElementFromSecondClause.getElementName();
                     }
                     if (thirdElementFromSecondClause.hasNegation()) {
-                        singleWithExpression = negateTheValue + thirdElementFromSecondClause.getElementName();
+                        singleWithExpression = singleWithExpression + operator + negateTheValue + thirdElementFromSecondClause.getElementName();
                     } else if (!thirdElementFromSecondClause.hasNegation()) {
-                        singleWithExpression = thirdElementFromSecondClause.getElementName();
+                        singleWithExpression = singleWithExpression + operator + thirdElementFromSecondClause.getElementName();
                     }
                 }
 
@@ -452,9 +479,9 @@ public class Main_Lab2 {
                         singleWithExpression = firstElementFromSecondClause.getElementName();
                     }
                     if (thirdElementFromSecondClause.hasNegation()) {
-                        singleWithExpression = negateTheValue + thirdElementFromSecondClause.getElementName();
+                        singleWithExpression = singleWithExpression + operator + negateTheValue + thirdElementFromSecondClause.getElementName();
                     } else if (!thirdElementFromSecondClause.hasNegation()) {
-                        singleWithExpression = thirdElementFromSecondClause.getElementName();
+                        singleWithExpression = singleWithExpression  + operator + thirdElementFromSecondClause.getElementName();
                     }
                 } else if (firstClause.hasNegation() == secondElementFromSecondClause.hasNegation()) {
                     if (firstElementFromSecondClause.hasNegation()) {
@@ -463,9 +490,9 @@ public class Main_Lab2 {
                         singleWithExpression = firstElementFromSecondClause.getElementName();
                     }
                     if (thirdElementFromSecondClause.hasNegation()) {
-                        singleWithExpression = negateTheValue + thirdElementFromSecondClause.getElementName();
+                        singleWithExpression = singleWithExpression + operator + negateTheValue + thirdElementFromSecondClause.getElementName();
                     } else if (!thirdElementFromSecondClause.hasNegation()) {
-                        singleWithExpression = thirdElementFromSecondClause.getElementName();
+                        singleWithExpression = singleWithExpression+ operator + thirdElementFromSecondClause.getElementName();
                     }
                 }
 
@@ -482,26 +509,28 @@ public class Main_Lab2 {
                         singleWithExpression = secondElementFromSecondClause.getElementName();
                     }
                     if (firstElementFromSecondClause.hasNegation()) {
-                        singleWithExpression = negateTheValue + firstElementFromSecondClause.getElementName();
+                        singleWithExpression = singleWithExpression + operator + negateTheValue + firstElementFromSecondClause.getElementName();
                     } else if (!firstElementFromSecondClause.hasNegation()) {
-                        singleWithExpression = firstElementFromSecondClause.getElementName();
+                        singleWithExpression = singleWithExpression + operator + firstElementFromSecondClause.getElementName();
                     }
-                }  if (firstClause.hasNegation() == thirdElementFromSecondClause.hasNegation()) {
+                }
+                if (firstClause.hasNegation() == thirdElementFromSecondClause.hasNegation()) {
                     if (secondElementFromSecondClause.hasNegation()) {
                         singleWithExpression = negateTheValue + secondElementFromSecondClause.getElementName();
                     } else if (!secondElementFromSecondClause.hasNegation()) {
                         singleWithExpression = secondElementFromSecondClause.getElementName();
                     }
                     if (firstElementFromSecondClause.hasNegation()) {
-                        singleWithExpression = negateTheValue + firstElementFromSecondClause.getElementName();
+                        singleWithExpression = singleWithExpression + operator + negateTheValue + firstElementFromSecondClause.getElementName();
                     } else if (!firstElementFromSecondClause.hasNegation()) {
-                        singleWithExpression = firstElementFromSecondClause.getElementName();
+                        singleWithExpression = singleWithExpression + operator + firstElementFromSecondClause.getElementName();
                     }
                 }
 
             }
 
         }
+
         return singleWithExpression;
     }
 

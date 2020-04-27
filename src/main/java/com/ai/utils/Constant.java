@@ -8,6 +8,7 @@ public class Constant {
     public static final String small_ex_1= "small_example.txt";
     public static final String small_ex_2= "small_example_2.txt";
     public static final String small_ex_3= "small_example_3.txt";
+    public static final String small_ex_4= "small_example_4.txt";
     public static final String sample_output= "sample_output.txt";
     public static final String small_example_for_operators= "small_example_for_operators.txt";
     public static final String sample_output_min= "sample_output_min.txt";
