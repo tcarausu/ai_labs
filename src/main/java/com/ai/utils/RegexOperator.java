@@ -1,7 +1,7 @@
 package com.ai.utils;
 
 public class RegexOperator {
-    public static final String orOperator = " V ";
+    public static final String orOperator = " v ";
     public static final String andOperator = " & ";
     public static final String implyOperator = " > ";
     public static final String doubleNegationOp = "~~";
