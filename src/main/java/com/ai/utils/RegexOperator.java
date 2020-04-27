@@ -12,6 +12,7 @@ public class RegexOperator {
     public static final String closeParenthesis = ")";
     public static final String NIL = "NIL";
     public static final String nextPairs = "nextPairs";
+    public static final String noMatchNextPairs = "noMatchNextPairs";
 
 
 }
