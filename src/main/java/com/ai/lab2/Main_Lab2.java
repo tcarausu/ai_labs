@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.ai.utils.Lab_Utils.*;
 import static com.ai.utils.RegexOperator.*;
@@ -106,13 +107,15 @@ public class Main_Lab2 {
         String derivation = null;
 
         ArrayList<String> initialNormalCNF = new ArrayList<>(normalAndCNFResults);
-
+        AtomicInteger count = new AtomicInteger();
         if (lastElem.length() == 1 || lastElem.length() == 2) {
             for (int i = normalAndCNFResults.size(); i > 0; i--) {
+                count.getAndIncrement();
                 int downTop = i - 1;
                 firstEl = normalAndCNFResults.get(downTop);
 
-                derivation = secondElementDerivation(derivedCounter, normalAndCNFResults, firstEl, derivation, downTop, lastElem);
+                derivation = secondElementDerivation(derivedCounter, normalAndCNFResults, firstEl,
+                        derivation, downTop, lastElem, count.get());
                 if (noDerivationPossible.get()) {
                     break;
                 }
@@ -137,10 +140,13 @@ public class Main_Lab2 {
 
             normalAndCNFResults.set(normalAndCNFResults.size() - 1, firstElemToTest);
             for (int i = normalAndCNFResults.size(); i > 0; i--) {
+                count.getAndIncrement();
+
                 int downTop = i - 1;
                 firstEl = normalAndCNFResults.get(downTop);
 
-                derivation = secondElementDerivation(derivedCounter, normalAndCNFResults, firstEl, derivation, downTop, firstElemToTest);
+                derivation = secondElementDerivation(derivedCounter, normalAndCNFResults, firstEl, derivation,
+                        downTop, firstElemToTest, count.get());
 
                 if (noDerivationPossible.get()) {
                     break;
@@ -151,14 +157,19 @@ public class Main_Lab2 {
                     break;
                 }
             }
+
+            //Testing 2nd Literal
             System.out.println("=============");
             normalAndCNFResults = initialNormalCNF;
             normalAndCNFResults.set(normalAndCNFResults.size() - 1, secondElemToTest);
             for (int i = normalAndCNFResults.size(); i > 0; i--) {
+                count.getAndIncrement();
+
                 int downTop = i - 1;
                 firstEl = normalAndCNFResults.get(downTop);
 
-                derivation = secondElementDerivation(derivedCounter, normalAndCNFResults, firstEl, derivation, downTop, secondElemToTest);
+                derivation = secondElementDerivation(derivedCounter, normalAndCNFResults, firstEl,
+                        derivation, downTop, secondElemToTest, count.get());
                 if (noDerivationPossible.get()) {
                     break;
                 }
@@ -174,7 +185,7 @@ public class Main_Lab2 {
     }
 
     private static String secondElementDerivation(int derivedCounter, ArrayList<String> normalAndCNFResults,
-                                                  String firstEl, String derivation, int downTop, String lastElem) {
+                                                  String firstEl, String derivation, int downTop, String lastElem, int count) {
         String secondEl = null;
         for (int j = normalAndCNFResults.size(); j >= 0; j--) {
             if (downTop > 0) {
@@ -196,7 +207,7 @@ public class Main_Lab2 {
 
                 normalAndCNFResults.add(derivation);
 
-                System.out.println(derivedCounter + 1 + ". " + derivation + " "
+                System.out.println(derivedCounter + count + ". " + derivation + " "
                         + openParenthesis + downTop + "," + j + closeParenthesis);
                 break;
             } else {
@@ -217,8 +228,7 @@ public class Main_Lab2 {
                 }
             }
             if (derivation.equals(NIL)) {
-                System.out.println("=============");
-                System.out.println(derivedCounter + 1 + ". " + derivation + " " + openParenthesis + downTop + "," + j + closeParenthesis);
+                System.out.println(derivedCounter + count + ". " + derivation + " " + openParenthesis + downTop + "," + j + closeParenthesis);
                 break;
 
             }
