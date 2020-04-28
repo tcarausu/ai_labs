@@ -13,6 +13,7 @@ public class RegexOperator {
     public static final String NIL = "NIL";
     public static final String nextPairs = "nextPairs";
     public static final String noMatchNextPairs = "noMatchNextPairs";
+    public static final String hasMatchingLiteral_NextPairs = "hasMatchingLiteral_NextPairs";
 
 
 }
