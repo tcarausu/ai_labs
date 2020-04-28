@@ -12,7 +12,7 @@ import static com.ai.utils.Lab_Utils.*;
 import static com.ai.utils.RegexOperator.*;
 import static org.apache.commons.lang3.StringUtils.*;
 
-public class Main_Lab2 {
+public class Solution {
 
     static LinkedHashMap<String, HashMap<String, ArrayList<LogicalElement>>> mapForCNF = new LinkedHashMap<>();
     static LinkedHashMap<String, ArrayList<LogicalElement>> promiseWithElements = new LinkedHashMap<>();
@@ -24,8 +24,7 @@ public class Main_Lab2 {
 //        Scanner sc = new Scanner(new File(Constant.small_ex_3));
         Scanner sc = new Scanner(new File(Constant.small_ex_4));
 
-        int derivedCounter = 0;
-
+        AtomicInteger count = new AtomicInteger();
         ArrayList<String> listOfPremises = new ArrayList<>();
         ArrayList<String> normalAndCNFResults = new ArrayList<>();
 
@@ -37,7 +36,7 @@ public class Main_Lab2 {
         }
 
         String lastElem = listOfPremises.get(listOfPremises.size() - 1);
-
+        String initialGoal = lastElem;
         for (String currentPremise : listOfPremises) {
             ArrayList<LogicalElement> elementsToCompare = new ArrayList<>();
 
@@ -56,7 +55,7 @@ public class Main_Lab2 {
                 else if (currentPremise.contains(implyOperator)) element.setOperator(implyOperator);
                 else if (currentPremise.contains(equivalent)) element.setOperator(equivalent);
 
-                if (elementsToCompare.size() == 2) {
+                if (elementsToCompare.size() > 1) {
                     if (currentPremise.equals(lastElem)) {
                         currentPremise = negateTheValue + openParenthesis + elementsToCompare.get(0).getElementName()
                                 + element.getOperator() + elementsToCompare.get(1).getElementName() + closeParenthesis;
@@ -73,7 +72,8 @@ public class Main_Lab2 {
         }
 
         System.out.println("=============");
-        for (int i = 0; i < listOfPremises.size() - 1; i++) {
+        for (int i = count.get(); i < listOfPremises.size() - 1; i++) {
+            count.getAndIncrement();
             String element = listOfPremises.get(i);
             System.out.println(i + ". " + element);
         }
@@ -81,11 +81,9 @@ public class Main_Lab2 {
         System.out.println("=============");
         String currentLast = normalAndCNFResults.get(normalAndCNFResults.size() - 1);
         if (currentLast.length() == 2 || currentLast.length() == 1) {
-            System.out.println(listOfPremises.size() + ". " + negationElement(lastElem));
-        } else if (currentLast.length() > 2) {
-            System.out.println(listOfPremises.size() + ". " + normalAndCNFResults.get(normalAndCNFResults.size() - 1));
+            System.out.println(count + ". " + negationElement(lastElem));
+            System.out.println("=============");
         }
-        System.out.println("=============");
 
         String negatedElem = negationElement(lastElem);
 
@@ -101,27 +99,23 @@ public class Main_Lab2 {
             normalAndCNFResults.set(normalAndCNFResults.size() - 1, lastElem);
         }
 
-        derivedCounter = listOfPremises.size();
-
         String firstEl;
         String derivation = null;
 
-        ArrayList<String> initialNormalCNF = new ArrayList<>(normalAndCNFResults);
-        AtomicInteger count = new AtomicInteger();
         if (lastElem.length() == 1 || lastElem.length() == 2) {
             for (int i = normalAndCNFResults.size(); i > 0; i--) {
                 count.getAndIncrement();
                 int downTop = i - 1;
                 firstEl = normalAndCNFResults.get(downTop);
 
-                derivation = secondElementDerivation(derivedCounter, normalAndCNFResults, firstEl,
+                derivation = prepareSecondElementForDerivation(normalAndCNFResults, firstEl,
                         derivation, downTop, lastElem, count.get());
                 if (noDerivationPossible.get()) {
                     break;
                 }
                 if (derivation.equals(NIL)) {
                     System.out.println("=============");
-                    System.out.println(lastElem + " is true");
+                    System.out.println(initialGoal + " is true");
                     break;
                 }
             }
@@ -134,58 +128,44 @@ public class Main_Lab2 {
             } else if (lastElem.contains(andOperator)) {
                 elements = trimByOperator(lastElem, andOperator);
             }
-
-            String firstElemToTest = elements[0];
-            String secondElemToTest = elements[1];
-
-            normalAndCNFResults.set(normalAndCNFResults.size() - 1, firstElemToTest);
-            for (int i = normalAndCNFResults.size(); i > 0; i--) {
-                count.getAndIncrement();
-
-                int downTop = i - 1;
-                firstEl = normalAndCNFResults.get(downTop);
-
-                derivation = secondElementDerivation(derivedCounter, normalAndCNFResults, firstEl, derivation,
-                        downTop, firstElemToTest, count.get());
-
-                if (noDerivationPossible.get()) {
-                    break;
+            ArrayList<String> initialCNFResults = new ArrayList<>(normalAndCNFResults);
+            for (String element : elements) {
+                if(element.contains(doubleNegationOp)) {
+                  element=  element.replace(doubleNegationOp,"");
                 }
-                if (derivation.equals(NIL)) {
-                    System.out.println("=============");
-                    System.out.println(firstElemToTest + " is true");
-                    break;
-                }
+                System.out.println(count.getAndIncrement() + ". " + element);
             }
-
-            //Testing 2nd Literal
             System.out.println("=============");
-            normalAndCNFResults = initialNormalCNF;
-            normalAndCNFResults.set(normalAndCNFResults.size() - 1, secondElemToTest);
-            for (int i = normalAndCNFResults.size(); i > 0; i--) {
-                count.getAndIncrement();
+            elementLoopLabel:
+            for (String element : elements) {
+                normalAndCNFResults.set(initialCNFResults.size() - 1, element);
+                for (int j = normalAndCNFResults.size(); j > 0; j--) {
 
-                int downTop = i - 1;
-                firstEl = normalAndCNFResults.get(downTop);
+                    int downTop = j - 1;
+                    firstEl = normalAndCNFResults.get(downTop);
 
-                derivation = secondElementDerivation(derivedCounter, normalAndCNFResults, firstEl,
-                        derivation, downTop, secondElemToTest, count.get());
-                if (noDerivationPossible.get()) {
-                    break;
-                }
-                if (derivation.equals(NIL)) {
-                    System.out.println("=============");
-                    System.out.println(secondElemToTest + " is true");
-                    break;
+                    derivation = prepareSecondElementForDerivation(normalAndCNFResults, firstEl, derivation,
+                            downTop, element, count.get());
+                    count.getAndIncrement();
+
+                    if (noDerivationPossible.get()) {
+                        normalAndCNFResults = initialCNFResults;
+                        break ;
+                    }
+                    if (derivation.equals(NIL)) {
+                        System.out.println("=============");
+                        System.out.println(initialGoal + " is true");
+                        System.out.println("=============");
+                        break elementLoopLabel;
+                    }
+
                 }
             }
         }
-
-
     }
 
-    private static String secondElementDerivation(int derivedCounter, ArrayList<String> normalAndCNFResults,
-                                                  String firstEl, String derivation, int downTop, String lastElem, int count) {
+    private static String prepareSecondElementForDerivation(ArrayList<String> normalAndCNFResults,
+                                                            String firstEl, String derivation, int downTop, String lastElem, int count) {
         String secondEl = null;
         for (int j = normalAndCNFResults.size(); j >= 0; j--) {
             if (downTop > 0) {
@@ -198,7 +178,7 @@ public class Main_Lab2 {
                 break;
             }
 
-            derivation = derivation(firstEl, secondEl);
+            derivation = derivationOfElements(firstEl, secondEl);
 
             if (derivation != null && !derivation.equals(noMatchNextPairs)
                     && !derivation.equals(NIL) && !derivation.contains(hasMatchingLiteral_NextPairs)) {
@@ -207,7 +187,7 @@ public class Main_Lab2 {
 
                 normalAndCNFResults.add(derivation);
 
-                System.out.println(derivedCounter + count + ". " + derivation + " "
+                System.out.println(count + ". " + derivation + " "
                         + openParenthesis + downTop + "," + j + closeParenthesis);
                 break;
             } else {
@@ -228,7 +208,8 @@ public class Main_Lab2 {
                 }
             }
             if (derivation.equals(NIL)) {
-                System.out.println(derivedCounter + count + ". " + derivation + " " + openParenthesis + downTop + "," + j + closeParenthesis);
+                System.out.println(count + ". " + derivation + " " + openParenthesis + downTop + "," + j + closeParenthesis);
+                noDerivationPossible.getAndSet(false);
                 break;
 
             }
@@ -237,7 +218,7 @@ public class Main_Lab2 {
         return derivation;
     }
 
-    private static String derivation(String firstClause, String secondClause) {
+    private static String derivationOfElements(String firstClause, String secondClause) {
         //In case that both Clause have at least an operator
         if ((firstClause.length() > 2) && (secondClause.length() > 2)) {
             if (firstClause.contains(orOperator) && secondClause.contains(orOperator)) {
