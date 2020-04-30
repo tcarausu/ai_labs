@@ -130,8 +130,8 @@ public class Solution {
             }
             ArrayList<String> initialCNFResults = new ArrayList<>(normalAndCNFResults);
             for (String element : elements) {
-                if(element.contains(doubleNegationOp)) {
-                  element=  element.replace(doubleNegationOp,"");
+                if (element.contains(doubleNegationOp)) {
+                    element = element.replace(doubleNegationOp, "");
                 }
                 System.out.println(count.getAndIncrement() + ". " + element);
             }
@@ -150,7 +150,6 @@ public class Solution {
 
                     if (noDerivationPossible.get()) {
                         normalAndCNFResults = initialCNFResults;
-                        break ;
                     }
                     if (derivation.equals(NIL)) {
                         System.out.println("=============");
@@ -164,8 +163,8 @@ public class Solution {
         }
     }
 
-    private static String prepareSecondElementForDerivation(ArrayList<String> normalAndCNFResults,
-                                                            String firstEl, String derivation, int downTop, String lastElem, int count) {
+    public static String prepareSecondElementForDerivation(ArrayList<String> normalAndCNFResults,
+                                                           String firstEl, String derivation, int downTop, String lastElem, int count) {
         String secondEl = null;
         for (int j = normalAndCNFResults.size(); j >= 0; j--) {
             if (downTop > 0) {
@@ -173,7 +172,7 @@ public class Solution {
                 secondEl = normalAndCNFResults.get(downTop - 1);
             } else if (downTop == 0) {
                 System.out.println("=============");
-                System.out.println(lastElem + " is false. As '" + derivation + "' is the last value present");
+                System.out.println(lastElem + " is false. As '" + derivation + "' is the last value present\n");
                 noDerivationPossible.getAndSet(true);
                 break;
             }
@@ -232,6 +231,9 @@ public class Solution {
 
             } else if (firstClause.contains(andOperator) && secondClause.contains(andOperator)) {
                 return commonOp(firstClause, secondClause, andOperator);
+            } else if (!firstClause.contains(andOperator) && !firstClause.contains(orOperator)) {
+                return retrieveElements(firstClause, secondClause,
+                        firstClause.contains(negateTheValue), firstClause.replace(negateTheValue, ""));
             }
         }
 
@@ -311,74 +313,27 @@ public class Solution {
         }
 
         String[] expresionClauseElements = trimByOperator(expressionClause, operator);
-        String nameSecClauseFirstElem;
-        String nameSecClauseSecondElem;
-        String nameSecClauseThirdElem;
         ArrayList<LogicalElement> elements = new ArrayList<>();
+        LogicalElement firstElement = new LogicalElement(simpleClause);
+        elements.add(firstElement);
 
-        if (expresionClauseElements.length == 2) {
-            nameSecClauseFirstElem = expresionClauseElements[0];
-            nameSecClauseSecondElem = expresionClauseElements[1];
-
-            LogicalElement firstElement = new LogicalElement(simpleClause);
-            LogicalElement secClauseFirstElem = new LogicalElement(nameSecClauseFirstElem);
-            LogicalElement secClauseSecondElem = new LogicalElement(nameSecClauseSecondElem);
-
-            if (contains) {
-                firstElement.setElementName(replace);
-                firstElement.setHasNegation(true);
-            }
-            if (nameSecClauseFirstElem.contains(negateTheValue)) {
-                secClauseFirstElem.setElementName(nameSecClauseFirstElem.replace(negateTheValue, ""));
-                secClauseFirstElem.setHasNegation(true);
-            }
-            if (nameSecClauseSecondElem.contains(negateTheValue)) {
-                secClauseSecondElem.setElementName(nameSecClauseSecondElem.replace(negateTheValue, ""));
-                secClauseSecondElem.setHasNegation(true);
-            }
-
-            elements.add(firstElement);
-            elements.add(secClauseFirstElem);
-            elements.add(secClauseSecondElem);
-
-            return compareExpresionToSingleClause(elements, operator);
+        if (contains) {
+            firstElement.setElementName(replace);
+            firstElement.setHasNegation(true);
         }
 
-        if (expresionClauseElements.length == 3) {
-            nameSecClauseFirstElem = expresionClauseElements[0];
-            nameSecClauseSecondElem = expresionClauseElements[1];
-            nameSecClauseThirdElem = expresionClauseElements[2];
+        for (String expression : expresionClauseElements) {
+            LogicalElement logicalEl = new LogicalElement(expression);
 
-            LogicalElement firstElement = new LogicalElement(simpleClause);
-            LogicalElement secClauseFirstElem = new LogicalElement(nameSecClauseFirstElem);
-            LogicalElement secClauseSecondElem = new LogicalElement(nameSecClauseSecondElem);
-            LogicalElement secClauseThirdElem = new LogicalElement(nameSecClauseThirdElem);
+            if (logicalEl.getElementName().contains(negateTheValue)) {
+                logicalEl.setElementName(expression.replace(negateTheValue, ""));
+                logicalEl.setHasNegation(true);
+            }
+            elements.add(logicalEl);
 
-            if (contains) {
-                firstElement.setElementName(replace);
-                firstElement.setHasNegation(true);
-            }
-            if (nameSecClauseFirstElem.contains(negateTheValue)) {
-                secClauseFirstElem.setElementName(nameSecClauseFirstElem.replace(negateTheValue, ""));
-                secClauseFirstElem.setHasNegation(true);
-            }
-            if (nameSecClauseSecondElem.contains(negateTheValue)) {
-                secClauseSecondElem.setElementName(nameSecClauseSecondElem.replace(negateTheValue, ""));
-                secClauseSecondElem.setHasNegation(true);
-            }
-            if (nameSecClauseThirdElem.contains(negateTheValue)) {
-                secClauseThirdElem.setElementName(nameSecClauseThirdElem.replace(negateTheValue, ""));
-                secClauseThirdElem.setHasNegation(true);
-            }
-            elements.add(firstElement);
-            elements.add(secClauseFirstElem);
-            elements.add(secClauseSecondElem);
-            elements.add(secClauseThirdElem);
-
-            return compareExpresionToSingleClause(elements, operator);
         }
 
-        return null;
+        return compareExpresionToSingleClause(elements, operator);
     }
 
     private static String differentOp(String firstClause, String secondClause, String firstOp, String secondOp) {

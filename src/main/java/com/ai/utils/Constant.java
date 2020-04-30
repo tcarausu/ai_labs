@@ -20,4 +20,7 @@ public class Constant {
     public static final String aiFail = "ai_fail.txt";
     public static final String aiPass = "ai_pass.txt";
     public static final String istraHeuristicPessimistic = "istra_pessimistic_heuristic.txt";
+
+
+    public static final String chicken_alfredo = "chicken_alfredo.txt";
 }
