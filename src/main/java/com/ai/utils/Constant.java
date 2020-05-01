@@ -23,4 +23,6 @@ public class Constant {
 
 
     public static final String chicken_alfredo = "chicken_alfredo.txt";
+    public static final String coffee = "coffee.txt";
+    public static final String coffee_input = "coffee_input.txt";
 }
