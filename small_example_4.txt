@@ -1,4 +1,4 @@
 ~A V B
 ~B V C
 A
-b v c
+c v b

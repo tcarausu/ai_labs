@@ -4,10 +4,7 @@ import com.ai.utils.Constant;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.ai.lab2.Solution.*;
@@ -19,31 +16,31 @@ import static org.apache.commons.lang3.StringUtils.lowerCase;
 public class CookingAssistant {
 
     public static void main(String[] args) throws FileNotFoundException {
-        System.out.println("Please select the working mode: ");
+//        System.out.println("Please select the working mode: ");
+//
+//        Scanner sc = new Scanner(System.in);
+//        String line = sc.nextLine();
+//
+//        if (line.equals("interactive")) {
+//            Scanner interactive = new Scanner(new File(Constant.chicken_alfredo));
+//
+//            refutationResolution(interactive);
+//            interactive.close();
+//        } else if (line.equals("test")) {
+        Scanner interactive = new Scanner(new File(Constant.chicken_alfredo));
 
-        Scanner sc = new Scanner(System.in);
-        String line = sc.nextLine();
+        refutationResolution(interactive);
+        interactive.close();
 
-        if (line.equals("interactive")) {
-            Scanner interactive = new Scanner(new File(Constant.chicken_alfredo));
-
-            refutationResolution(interactive);
-            interactive.close();
-        } else if (line.equals("test")) {
-            Scanner interactive = new Scanner(new File(Constant.chicken_alfredo));
-
-            refutationResolution(interactive);
-            interactive.close();
-
-            sc.close();
-        }
+//            sc.close();
+//        }
     }
 
     private static void refutationResolution(Scanner sc) {
 
         AtomicInteger count = new AtomicInteger();
         ArrayList<String> listOfPremises = new ArrayList<>();
-        ArrayList<String> normalAndCNFResults = new ArrayList<>();
+        LinkedList<String> normalAndCNFResults = new LinkedList<>();
 
         while (sc.hasNext()) {
             String line = lowerCase(sc.nextLine());
@@ -114,74 +111,70 @@ public class CookingAssistant {
             String[] elements = new String[0];
             if (!lastElem.contains(orOperator) && !lastElem.contains(andOperator)) {
                 System.out.println("=============");
-                ArrayList<String> initialCNFResults = new ArrayList<>(normalAndCNFResults);
+                LinkedList<String> initialCNFResults = new LinkedList<>(normalAndCNFResults);
 
                 elementLoopLabel:
-                for (String element : normalAndCNFResults) {
+                for (int j = normalAndCNFResults.size(); j > 0; j--) {
+                    int downTop = j - 1;
+                    firstEl = normalAndCNFResults.get(downTop);
+
+                    derivation = prepareSecondElementForDerivation(normalAndCNFResults, firstEl, derivation,
+                            downTop, lastElem, count.get());
+                    count.getAndIncrement();
+
+                    if (noDerivationPossible.get()) {
+                        normalAndCNFResults = initialCNFResults;
+                    }
+                    if (derivation.equals(NIL)) {
+                        System.out.println("=============");
+                        System.out.println(initialGoal + " is true");
+                        System.out.println("=============");
+                        break elementLoopLabel;
+                    }
+                }
+            }
+//            else {
+//                if (lastElem.contains(orOperator)) {
+//                    elements = trimByOperator(lastElem, orOperator);
+//                }
+//                else if (lastElem.contains(andOperator)) {
+//                    elements = trimByOperator(lastElem, andOperator);
+//                }
+//
+//                LinkedList<String> initialCNFResults = new LinkedList<>(normalAndCNFResults);
+//                for (String element : elements) {
+//                    if (element.contains(doubleNegationOp)) {
+//                        element = element.replace(doubleNegationOp, "");
+//                    }
+//                    System.out.println(count.getAndIncrement() + ". " + element);
+//                }
+//
+//                System.out.println("=============");
+//                elementLoopLabel:
+//                for (String element : elements) {
 //                    normalAndCNFResults.set(initialCNFResults.size() - 1, element);
-                    for (int j = normalAndCNFResults.size(); j > 0; j--) {
-
-                        int downTop = j - 1;
-                        firstEl = normalAndCNFResults.get(downTop);
-
-                        derivation = prepareSecondElementForDerivation(normalAndCNFResults, firstEl, derivation,
-                                downTop, element, count.get());
-                        count.getAndIncrement();
-
-                        if (noDerivationPossible.get()) {
-                            normalAndCNFResults = initialCNFResults;
-                        }
-                        if (derivation.equals(NIL)) {
-                            System.out.println("=============");
-                            System.out.println(initialGoal + " is true");
-                            System.out.println("=============");
-                            break elementLoopLabel;
-                        }
-                    }
-                }
-            }
-            else {
-                if (lastElem.contains(orOperator)) {
-                    elements = trimByOperator(lastElem, orOperator);
-                }
-                else if (lastElem.contains(andOperator)) {
-                    elements = trimByOperator(lastElem, andOperator);
-                }
-
-                ArrayList<String> initialCNFResults = new ArrayList<>(normalAndCNFResults);
-                for (String element : elements) {
-                    if (element.contains(doubleNegationOp)) {
-                        element = element.replace(doubleNegationOp, "");
-                    }
-                    System.out.println(count.getAndIncrement() + ". " + element);
-                }
-
-                System.out.println("=============");
-                elementLoopLabel:
-                for (String element : elements) {
-                    normalAndCNFResults.set(initialCNFResults.size() - 1, element);
-                    for (int j = normalAndCNFResults.size(); j > 0; j--) {
-
-                        int downTop = j - 1;
-                        firstEl = normalAndCNFResults.get(downTop);
-
-                        derivation = prepareSecondElementForDerivation(normalAndCNFResults, firstEl, derivation,
-                                downTop, element, count.get());
-                        count.getAndIncrement();
-
-                        if (noDerivationPossible.get()) {
-                            normalAndCNFResults = initialCNFResults;
-                        }
-                        if (derivation.equals(NIL)) {
-                            System.out.println("=============");
-                            System.out.println(initialGoal + " is true");
-                            System.out.println("=============");
-                            break elementLoopLabel;
-                        }
-
-                    }
-                }
-            }
+//                    for (int j = normalAndCNFResults.size(); j > 0; j--) {
+//
+//                        int downTop = j - 1;
+//                        firstEl = normalAndCNFResults.get(downTop);
+//
+//                        derivation = prepareSecondElementForDerivation(normalAndCNFResults, firstEl, derivation,
+//                                downTop, element, count.get());
+//                        count.getAndIncrement();
+//
+//                        if (noDerivationPossible.get()) {
+//                            normalAndCNFResults = initialCNFResults;
+//                        }
+//                        if (derivation.equals(NIL)) {
+//                            System.out.println("=============");
+//                            System.out.println(initialGoal + " is true");
+//                            System.out.println("=============");
+//                            break elementLoopLabel;
+//                        }
+//
+//                    }
+//                }
+//            }
 
         }
     }
