@@ -182,7 +182,6 @@ public class Solution {
                 if (normalAndCNFResults.size() > 1) {
                     secondEl = normalAndCNFResults.get(downTop);
                 } else {
-
                     System.out.println("=============");
                     System.out.println(lastElem + " is false. As '" + derivation + "' is the last value present\n");
                     noDerivationPossible.getAndSet(true);

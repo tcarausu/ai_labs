@@ -15,5 +15,8 @@ public class RegexOperator {
     public static final String noMatchNextPairs = "noMatchNextPairs";
     public static final String hasMatchingLiteral_NextPairs = "hasMatchingLiteral_NextPairs";
 
+    public static final String clauseValidity = " ?";
+    public static final String clauseAddition = " +";
+    public static final String clauseRemoval = " -";
 
 }
