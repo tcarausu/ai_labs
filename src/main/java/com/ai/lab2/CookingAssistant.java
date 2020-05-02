@@ -28,6 +28,7 @@ public class CookingAssistant {
 //            interactive.close();
 //        } else if (line.equals("test")) {
         Scanner interactive = new Scanner(new File(Constant.chicken_alfredo));
+//        Scanner interactive = new Scanner(new File(Constant.coffee));
 
         refutationResolution(interactive);
         interactive.close();
@@ -93,16 +94,54 @@ public class CookingAssistant {
         }
 
         System.out.println("=============");
+        String[] lastElements = new String[0];
+
+        LinkedList<String> lastElementsList = null;
+        String negatedElem = "";
+        if (lastElem.contains(orOperator)) {
+            lastElements = trimByOperator(lastElem, orOperator);
+            lastElementsList = new LinkedList<>(Arrays.asList(lastElements));
+            lastElementsList.add(orOperator);
+        } else if (lastElem.contains(andOperator)) {
+            lastElements = trimByOperator(lastElem, andOperator);
+            lastElementsList = new LinkedList<>(Arrays.asList(lastElements));
+            lastElementsList.add(andOperator);
+        }
+
+        if (lastElements.length == 1) {
+            negatedElem = negationElement(lastElem);
+            if (negatedElem.contains(doubleNegationOp)) negatedElem = lastElem.replace(doubleNegationOp, "");
+            normalAndCNFResults.set(normalAndCNFResults.size() - 1, negatedElem);
+
+        } else if (lastElements.length > 1) {
+            String resultAfterNegation = "";
+            for (int i = 0; i < lastElementsList.size() - 1; i++) {
+                String elem = lastElementsList.get(i);
+                elem = negationElement(elem);
+                if (elem.contains(doubleNegationOp)) elem = elem.replace(doubleNegationOp, "");
+                resultAfterNegation += elem + lastElementsList.get(lastElementsList.size() - 1);
+                normalAndCNFResults.set(normalAndCNFResults.size() - 1, resultAfterNegation);
+            }
+            String lastNormal = normalAndCNFResults.getLast();
+            if (lastNormal.endsWith(orOperator)
+//                    || lastNormal.endsWith(andOperator)
+            ) {
+                lastNormal = lastNormal + "end";
+                normalAndCNFResults.set(normalAndCNFResults.size() - 1, lastNormal);
+                lastNormal = lastNormal.replace(orOperator + "end", "");
+                normalAndCNFResults.set(normalAndCNFResults.size() - 1, lastNormal);
+            }
+        } else {
+            negatedElem = negationElement(lastElem);
+            if (negatedElem.contains(doubleNegationOp)) negatedElem = lastElem.replace(doubleNegationOp, "");
+            normalAndCNFResults.set(normalAndCNFResults.size() - 1, negatedElem);
+        }
+
         String currentLast = normalAndCNFResults.get(normalAndCNFResults.size() - 1);
         if (currentLast.length() == 2 || currentLast.length() == 1) {
             System.out.println(count + ". " + negationElement(lastElem));
             System.out.println("=============");
         }
-
-        String negatedElem = negationElement(lastElem);
-
-        if (negatedElem.contains(doubleNegationOp)) negatedElem = lastElem.replace(doubleNegationOp, "");
-        normalAndCNFResults.set(normalAndCNFResults.size() - 1, negatedElem);
 
         String firstEl;
         String derivation = null;
@@ -113,7 +152,6 @@ public class CookingAssistant {
                 System.out.println("=============");
                 LinkedList<String> initialCNFResults = new LinkedList<>(normalAndCNFResults);
 
-                elementLoopLabel:
                 for (int j = normalAndCNFResults.size(); j > 0; j--) {
                     int downTop = j - 1;
                     firstEl = normalAndCNFResults.get(downTop);

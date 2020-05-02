@@ -173,17 +173,21 @@ public class Solution {
     public static String prepareSecondElementForDerivation(LinkedList<String> normalAndCNFResults,
                                                            String firstEl, String derivation, int downTop, String lastElem, int count) {
         String secondEl = null;
-        boolean skipRecursivePaths = false;
 
         for (int j = normalAndCNFResults.size(); j >= 0; j--) {
             if (downTop > 0) {
 
                 secondEl = normalAndCNFResults.get(downTop - 1);
             } else if (downTop == 0) {
-                System.out.println("=============");
-                System.out.println(lastElem + " is false. As '" + derivation + "' is the last value present\n");
-                noDerivationPossible.getAndSet(true);
-                break;
+                if (normalAndCNFResults.size() > 1) {
+                    secondEl = normalAndCNFResults.get(downTop);
+                } else {
+
+                    System.out.println("=============");
+                    System.out.println(lastElem + " is false. As '" + derivation + "' is the last value present\n");
+                    noDerivationPossible.getAndSet(true);
+                    break;
+                }
             }
 
             derivation = derivationOfElements(firstEl, secondEl);
@@ -200,6 +204,7 @@ public class Solution {
                     String initialFirstEl = firstEl;
                     boolean hasMatchOrNot = findIfAnyMatches(firstElComponents, secondElComponents);
                     if (firstElComponents.length > 1 && secondElComponents.length > 1) {
+
                         if (hasMatchOrNot) {
                             firstElementAdjust = elementToClear + "end";
                             firstEl = firstEl + "end";
@@ -212,7 +217,7 @@ public class Solution {
                             normalAndCNFResults.remove(secondEl);
 
                             System.out.println(count + ". " + derivation + " "
-                                    + openParenthesis + downTop + "," + j + closeParenthesis);
+                                    + openParenthesis + downTop + "," + (count - 1) + closeParenthesis);
                         }
                     } else if (firstElComponents.length == 1 && secondElComponents.length > 1) {
                         if (hasMatchOrNot) {
@@ -220,7 +225,7 @@ public class Solution {
                             normalAndCNFResults.remove(firstEl);
 
                             System.out.println(count + ". " + derivation + " "
-                                    + openParenthesis + downTop + "," + j + closeParenthesis);
+                                    + openParenthesis + downTop + "," + (count - 1) + closeParenthesis);
                         }
                     } else if (firstElComponents.length > 1 && secondElComponents.length == 1) {
                         if (hasMatchOrNot) {
@@ -228,7 +233,7 @@ public class Solution {
                             normalAndCNFResults.remove(secondEl);
 
                             System.out.println(count + ". " + derivation + " "
-                                    + openParenthesis + downTop + "," + j + closeParenthesis);
+                                    + openParenthesis + downTop + "," + (count - 1) + closeParenthesis);
                         }
                     }
 
@@ -239,14 +244,11 @@ public class Solution {
                     normalAndCNFResults.remove(firstEl);
                     normalAndCNFResults.remove(secondEl);
                     normalAndCNFResults.add(derivation);
-                    skipRecursivePaths = true;
 
                     System.out.println(count + ". " + derivation + " "
-                            + openParenthesis + downTop + "," + j + closeParenthesis);
+                            + openParenthesis + downTop + "," + (count - 1) + closeParenthesis);
                 }
-                if (skipRecursivePaths) {
-                    return derivation;
-                }
+
                 break;
             } else {
                 assert derivation != null;
@@ -260,10 +262,10 @@ public class Solution {
                     if (derivation.equals("")) {
                         normalAndCNFResults.remove(firstEl);
                         normalAndCNFResults.remove(secondEl);
-//                        String newLastEl = normalAndCNFResults.getLast();
-                        String newOneBeforeEl = normalAndCNFResults.get(normalAndCNFResults.size() - 2);
-                        prepareSecondElementForDerivation(normalAndCNFResults, newOneBeforeEl, null,
-                                downTop, lastElem, count);
+                        if(normalAndCNFResults.size()==0){
+                            return NIL;
+                        }
+                        break;
                     }
                     if (derivation.equals(noMatchNextPairs)) {
                         normalAndCNFResults.remove(firstEl);
@@ -277,7 +279,6 @@ public class Solution {
                 System.out.println(count + ". " + derivation + " " + openParenthesis + downTop + "," + j + closeParenthesis);
                 noDerivationPossible.getAndSet(false);
                 break;
-
             }
         }
 
@@ -286,6 +287,7 @@ public class Solution {
 
     private static boolean findIfAnyMatches(String[] firstElComponents, String[] secondElComponents) {
         boolean hasMatchOrNot = false;
+        foundMatch:
         for (String firstElComponent : firstElComponents) {
             if (firstElComponent.contains(negateTheValue))
                 firstElComponent = firstElComponent.replace(negateTheValue, "");
@@ -293,6 +295,9 @@ public class Solution {
                 if (secondElComponent.contains(negateTheValue))
                     secondElComponent = secondElComponent.replace(negateTheValue, "");
                 hasMatchOrNot = firstElComponent.equals(secondElComponent);
+                if (hasMatchOrNot) {
+                    break foundMatch;
+                }
             }
         }
         return hasMatchOrNot;
@@ -307,10 +312,22 @@ public class Solution {
                 StringBuilder firstClauseBuilder = new StringBuilder(firstClause);
                 for (String element : elements) {
                     result = retrieveElements(element, secondClause,
-                            firstClauseBuilder.toString().contains(negateTheValue), element.replace(negateTheValue, ""));
+                            firstClauseBuilder.toString().contains(negateTheValue),
+                            element.replace(negateTheValue, ""));
                     if (result.equals("")) {
                         firstClauseBuilder.append("end");
-                        result = firstClauseBuilder.toString().replace(orOperator + element + "end", "");
+                        result = firstClauseBuilder.toString().replace(element, "");
+                        elements = trimByOperator(result.replace("end", ""), orOperator);
+                        if (elements.length == 1) {
+                            String remainingEl = elements[0];
+                            if (remainingEl.startsWith("v ")) {
+                                result = remainingEl.replace("v ", "");
+                            } else if (remainingEl.endsWith(" v")) {
+                                result = remainingEl.replace(" v", "");
+                            }
+                            return result;
+                        }
+                        result = result.replace(orOperator + "end", "");
                     }
                 }
                 return result;
