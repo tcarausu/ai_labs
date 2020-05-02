@@ -129,7 +129,7 @@ public class CookingAssistant {
                         System.out.println("=============");
                         System.out.println(initialGoal + " is true");
                         System.out.println("=============");
-                        break elementLoopLabel;
+                        break;
                     }
                 }
             }

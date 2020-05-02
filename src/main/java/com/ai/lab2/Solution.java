@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.ai.utils.Lab_Utils.*;
 import static com.ai.utils.RegexOperator.*;
@@ -17,6 +18,12 @@ public class Solution {
     static LinkedHashMap<String, HashMap<String, ArrayList<LogicalElement>>> mapForCNF = new LinkedHashMap<>();
     static LinkedHashMap<String, ArrayList<LogicalElement>> promiseWithElements = new LinkedHashMap<>();
     static AtomicBoolean noDerivationPossible = new AtomicBoolean();
+
+    static AtomicReference<String> atomicStringReference = new AtomicReference<>();
+
+    public static AtomicReference<String> getAtomicStringReference() {
+        return atomicStringReference;
+    }
 
     public static void main(String[] args) throws FileNotFoundException {
 //        Scanner sc = new Scanner(new File(Constant.small_ex_1));
@@ -181,13 +188,39 @@ public class Solution {
 
             if (derivation != null && !derivation.equals(noMatchNextPairs) && !derivation.equals("")
                     && !derivation.equals(NIL) && !derivation.contains(hasMatchingLiteral_NextPairs)) {
-                normalAndCNFResults.remove(firstEl);
-                normalAndCNFResults.remove(secondEl);
 
-                normalAndCNFResults.add(derivation);
+                if (firstEl.contains(orOperator)) {
+                    String elementToClear = atomicStringReference.get();
+                    String[] firstElComponents = trimByOperator(firstEl, orOperator);
+                    String[] secondElComponents = trimByOperator(secondEl, orOperator);
 
-                System.out.println(count + ". " + derivation + " "
-                        + openParenthesis + downTop + "," + j + closeParenthesis);
+                    String currentFirstElement;
+                    for (String element : firstElComponents) {
+                        if (element.contains(elementToClear) && element.contains(negateTheValue)) {
+                            currentFirstElement = firstEl + "end";
+                            currentFirstElement = currentFirstElement.replace(orOperator + element + "end", "");
+
+                            normalAndCNFResults.set(normalAndCNFResults.indexOf(firstEl), currentFirstElement);
+                            String s = "s";
+                        }
+                        String s = "s";
+                    }
+                    normalAndCNFResults.set(normalAndCNFResults.indexOf(secondEl), derivation);
+
+//                    prepareSecondElementForDerivation(normalAndCNFResults, firstEl, derivation, downTop, lastElem, count);
+                    System.out.println(count + ". " + derivation + " "
+                            + openParenthesis + downTop + "," + j + closeParenthesis);
+                } else if (firstEl.contains(andOperator)) {
+                    normalAndCNFResults.remove(firstEl);
+                    normalAndCNFResults.remove(secondEl);
+                } else {
+                    normalAndCNFResults.remove(firstEl);
+                    normalAndCNFResults.remove(secondEl);
+                    normalAndCNFResults.add(derivation);
+                    System.out.println(count + ". " + derivation + " "
+                            + openParenthesis + downTop + "," + j + closeParenthesis);
+                }
+
                 break;
             } else {
                 assert derivation != null;
@@ -223,9 +256,14 @@ public class Solution {
             if (firstClause.contains(orOperator)) {
                 String result = "";
                 String[] elements = trimByOperator(firstClause, orOperator);
+                StringBuilder firstClauseBuilder = new StringBuilder(firstClause);
                 for (String element : elements) {
                     result = retrieveElements(element, secondClause,
-                            firstClause.contains(negateTheValue), element.replace(negateTheValue, ""));
+                            firstClauseBuilder.toString().contains(negateTheValue), element.replace(negateTheValue, ""));
+                    if (result.equals("")) {
+                        firstClauseBuilder.append("end");
+                        result = firstClauseBuilder.toString().replace(orOperator + element + "end", "");
+                    }
                 }
                 return result;
             } else if (firstClause.contains(andOperator)) {
@@ -234,7 +272,9 @@ public class Solution {
                 for (String element : elements) {
                     result = retrieveElements(element, secondClause,
                             firstClause.contains(negateTheValue), element.replace(negateTheValue, ""));
-
+                    if (result.equals("")) {
+                        result = result.replace(element, "");
+                    }
                 }
                 return result;
             } else if (!firstClause.contains(orOperator) && !firstClause.contains(andOperator)) {
@@ -319,8 +359,8 @@ public class Solution {
             operator = andOperator;
         }
 
-        String[] expresionClauseElements = trimByOperator(expressionClause, operator);
         ArrayList<LogicalElement> elements = new ArrayList<>();
+
         LogicalElement firstElement = new LogicalElement(simpleClause);
         elements.add(firstElement);
 
@@ -328,125 +368,27 @@ public class Solution {
             firstElement.setElementName(replace);
             firstElement.setHasNegation(true);
         }
+        if (!firstElement.getElementName().equals(expressionClause)) {
+            String[] expresionClauseElements = trimByOperator(expressionClause, operator);
+            for (String expression : expresionClauseElements) {
+                LogicalElement logicalEl = new LogicalElement(expression);
 
-        for (String expression : expresionClauseElements) {
-            LogicalElement logicalEl = new LogicalElement(expression);
+                if (logicalEl.getElementName().contains(negateTheValue)) {
+                    logicalEl.setElementName(expression.replace(negateTheValue, ""));
+                    logicalEl.setHasNegation(true);
+                }
+                elements.add(logicalEl);
+            }
+        } else {
+            LogicalElement logicalEl = new LogicalElement(expressionClause);
 
             if (logicalEl.getElementName().contains(negateTheValue)) {
-                logicalEl.setElementName(expression.replace(negateTheValue, ""));
+                logicalEl.setElementName(expressionClause.replace(negateTheValue, ""));
                 logicalEl.setHasNegation(true);
             }
             elements.add(logicalEl);
-
         }
-
         return compareExpresionToSingleClause(elements, operator);
-    }
-
-    private static String differentOp(String firstClause, String secondClause, String firstOp, String secondOp) {
-        String singleWithExpression = null;
-        String operator = "";
-        if (secondClause.contains(orOperator) || secondClause.contains(lowerCase(orOperator))) {
-            operator = lowerCase(orOperator);
-        } else if (secondClause.contains(andOperator)) {
-            operator = andOperator;
-        }
-
-        ArrayList<LogicalElement> elemAndNegation = new ArrayList<>();
-
-        String[] comparableOperatorsFirstClause = trimByOperator(firstClause, firstOp);
-        extractComparableElements(elemAndNegation, comparableOperatorsFirstClause);
-
-        String[] comparableOperatorsSecondClause = trimByOperator(secondClause, secondOp);
-        extractComparableElements(elemAndNegation, comparableOperatorsSecondClause);
-
-        LogicalElement firstElemN = elemAndNegation.get(0);
-        LogicalElement secondElemN = elemAndNegation.get(1);
-        LogicalElement thirdElemN = elemAndNegation.get(2);
-        LogicalElement forthElemN = elemAndNegation.get(3);
-
-        String firstElementToTest = firstElemN.getElementName();
-        String secondElementToTest = secondElemN.getElementName();
-        String thirdElementToTest = thirdElemN.getElementName();
-        String forthElementToTest = forthElemN.getElementName();
-
-        if (firstElementToTest.equals(thirdElementToTest)) {
-            if (firstElemN.hasNegation() != thirdElemN.hasNegation()) {
-                singleWithExpression = twoElementOperatorNegationComparison(operator, singleWithExpression,
-                        secondElemN, forthElemN);
-                String s = "s";
-            }
-            String s = "s";
-        } else if (firstElementToTest.equals(forthElementToTest)) {
-            if (firstElemN.hasNegation() != forthElemN.hasNegation()) {
-                singleWithExpression = twoElementOperatorNegationComparison(operator, singleWithExpression,
-                        secondElemN, thirdElemN);
-                String s = "s";
-            }
-            String s = "s";
-        }
-
-        if (secondElementToTest.equals(thirdElementToTest)) {
-            if (secondElemN.hasNegation() != thirdElemN.hasNegation()) {
-                singleWithExpression = twoElementOperatorNegationComparison(operator, singleWithExpression,
-                        firstElemN, forthElemN);
-                String s = "s";
-            }
-            String s = "s";
-
-        } else if (secondElementToTest.equals(forthElementToTest)) {
-            if (secondElemN.hasNegation() != forthElemN.hasNegation()) {
-                singleWithExpression = twoElementOperatorNegationComparison(operator, singleWithExpression,
-                        firstElemN, thirdElemN);
-                String s = "s";
-            }
-            String s = "s";
-        }
-        return singleWithExpression;
-
-    }
-
-    private static String commonOp(String firstClause, String secondClause, String operator) {
-        String singleWithExpression;
-        ArrayList<LogicalElement> elemAndNegation = new ArrayList<>();
-
-        String[] comparableOperatorsFirstClause = trimByOperator(firstClause, operator);
-        extractComparableElements(elemAndNegation, comparableOperatorsFirstClause);
-
-        String[] comparableOperatorsSecondClause = trimByOperator(secondClause, operator);
-        extractComparableElements(elemAndNegation, comparableOperatorsSecondClause);
-
-        LogicalElement firstElemN = elemAndNegation.get(0);
-        LogicalElement secondElemN = elemAndNegation.get(1);
-        LogicalElement thirdElemN = elemAndNegation.get(2);
-        LogicalElement forthElemN = elemAndNegation.get(3);
-
-        if (firstElemN.getElementName().equals(thirdElemN.getElementName())) {
-            if (!firstElemN.getOperator().equals(thirdElemN.getOperator())) {
-                elemAndNegation.remove(firstElemN);
-                elemAndNegation.remove(thirdElemN);
-            }
-        } else if (firstElemN.getElementName().equals(forthElemN.getElementName())) {
-            if (!firstElemN.getOperator().equals(forthElemN.getOperator())) {
-                elemAndNegation.remove(firstElemN);
-                elemAndNegation.remove(forthElemN);
-            }
-        } else if (secondElemN.getElementName().equals(thirdElemN.getElementName())) {
-            if (!secondElemN.getOperator().equals(thirdElemN.getOperator())) {
-                elemAndNegation.remove(secondElemN);
-                elemAndNegation.remove(thirdElemN);
-            }
-        } else if (secondElemN.getElementName().equals(forthElemN.getElementName())) {
-            if (!secondElemN.getOperator().equals(forthElemN.getOperator())) {
-                elemAndNegation.remove(secondElemN);
-                elemAndNegation.remove(forthElemN);
-            }
-        }
-
-        singleWithExpression = elemAndNegation.get(0).getOperator() + elemAndNegation.get(0).getElementName() + operator +
-                elemAndNegation.get(1).getOperator() + elemAndNegation.get(1).getElementName();
-
-        return singleWithExpression;
     }
 
     private static String compareExpresionToSingleClause(ArrayList<LogicalElement> elements, String operator) {
@@ -454,7 +396,7 @@ public class Solution {
         String finalExpression = "";
         String firstNegOrNot;
 
-        if (elements.size() > 2) {
+        if (elements.size() >= 2) {
             for (int i = 0; i < elements.size(); i++) {
                 LogicalElement firstEl = elements.get(0);
 
@@ -465,6 +407,7 @@ public class Solution {
                 if (i < elements.size() - 1) {
                     LogicalElement testingEl = elements.get(i + 1);
                     if (firstEl.getElementName().equals(testingEl.getElementName())) {
+                        atomicStringReference = new AtomicReference<>(testingEl.getElementName());
                         singleWithExpression = compareSingleClauseWithElementT(operator, firstNegOrNot, firstEl, testingEl);
                         finalExpression = finalExpression.concat(singleWithExpression);
                         if (singleWithExpression.contains(hasMatchingLiteral_NextPairs)) {
@@ -485,27 +428,7 @@ public class Solution {
             }
         }
 
-        return singleWithExpression;
-    }
 
-    private static String compareSingleClauseWithElement(String operator, String firstNegOrNot, LogicalElement firstClause,
-                                                         LogicalElement firstElementFromSecondClause, LogicalElement secondElementFromSecondClause, boolean secondElHasNegation) {
-        String singleWithExpression;
-        if (firstClause.hasNegation() != firstElementFromSecondClause.hasNegation()) {
-            if (secondElementFromSecondClause.hasNegation()) {
-                singleWithExpression = negateTheValue + secondElementFromSecondClause.getElementName();
-            } else {
-                singleWithExpression = secondElementFromSecondClause.getElementName();
-            }
-        } else {
-            if (secondElHasNegation) {
-                singleWithExpression = hasMatchingLiteral_NextPairs + firstNegOrNot + firstClause.getElementName() + operator
-                        + negateTheValue + secondElementFromSecondClause.getElementName();
-            } else {
-                singleWithExpression = hasMatchingLiteral_NextPairs + firstNegOrNot + firstClause.getElementName() + operator
-                        + secondElementFromSecondClause.getElementName();
-            }
-        }
         return singleWithExpression;
     }
 
@@ -526,7 +449,7 @@ public class Solution {
         return singleWithExpression;
     }
 
-    private static String twoElementOperatorNegationComparison(String operator, String singleWithExpression, LogicalElement firstElementFromSecondClause, LogicalElement secondElementFromSecondClause) {
+    public static String twoElementOperatorNegationComparison(String operator, String singleWithExpression, LogicalElement firstElementFromSecondClause, LogicalElement secondElementFromSecondClause) {
         if (secondElementFromSecondClause.hasNegation()) {
             singleWithExpression = negateTheValue + secondElementFromSecondClause.getElementName();
         } else if (!secondElementFromSecondClause.hasNegation()) {
@@ -540,8 +463,8 @@ public class Solution {
         return singleWithExpression;
     }
 
-    private static void extractComparableElements(ArrayList<LogicalElement> elemAndNegation, String[]
-            comparableOperatorsFirstClause) {
+    public static void extractComparableElements(ArrayList<LogicalElement> elemAndNegation,
+                                                 String[] comparableOperatorsFirstClause) {
         String firstClauseElem1 = comparableOperatorsFirstClause[0];
         String firstClauseElem2 = comparableOperatorsFirstClause[1];
 
