@@ -38,7 +38,7 @@ public class CookingAssistant {
 
     private static void refutationResolution(Scanner sc) {
 
-        AtomicInteger count = new AtomicInteger();
+        AtomicInteger count = new AtomicInteger(1);
         ArrayList<String> listOfPremises = new ArrayList<>();
         LinkedList<String> normalAndCNFResults = new LinkedList<>();
 

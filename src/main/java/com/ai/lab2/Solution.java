@@ -173,6 +173,8 @@ public class Solution {
     public static String prepareSecondElementForDerivation(LinkedList<String> normalAndCNFResults,
                                                            String firstEl, String derivation, int downTop, String lastElem, int count) {
         String secondEl = null;
+        boolean skipRecursivePaths = false;
+
         for (int j = normalAndCNFResults.size(); j >= 0; j--) {
             if (downTop > 0) {
 
@@ -194,22 +196,42 @@ public class Solution {
                     String[] firstElComponents = trimByOperator(firstEl, orOperator);
                     String[] secondElComponents = trimByOperator(secondEl, orOperator);
 
-                    String currentFirstElement;
-                    for (String element : firstElComponents) {
-                        if (element.contains(elementToClear) && element.contains(negateTheValue)) {
-                            currentFirstElement = firstEl + "end";
-                            currentFirstElement = currentFirstElement.replace(orOperator + element + "end", "");
+                    String firstElementAdjust = "";
+                    String initialFirstEl = firstEl;
+                    boolean hasMatchOrNot = findIfAnyMatches(firstElComponents, secondElComponents);
+                    if (firstElComponents.length > 1 && secondElComponents.length > 1) {
+                        if (hasMatchOrNot) {
+                            firstElementAdjust = elementToClear + "end";
+                            firstEl = firstEl + "end";
+                            if (firstEl.contains(negateTheValue + elementToClear)) {
+                                firstEl = firstEl.replace(orOperator + negateTheValue + firstElementAdjust, "");
+                                normalAndCNFResults.set(normalAndCNFResults.indexOf(initialFirstEl), firstEl);
+                            }
 
-                            normalAndCNFResults.set(normalAndCNFResults.indexOf(firstEl), currentFirstElement);
-                            String s = "s";
+                            normalAndCNFResults.set(normalAndCNFResults.indexOf(secondEl), derivation);
+                            normalAndCNFResults.remove(secondEl);
+
+                            System.out.println(count + ". " + derivation + " "
+                                    + openParenthesis + downTop + "," + j + closeParenthesis);
                         }
-                        String s = "s";
-                    }
-                    normalAndCNFResults.set(normalAndCNFResults.indexOf(secondEl), derivation);
+                    } else if (firstElComponents.length == 1 && secondElComponents.length > 1) {
+                        if (hasMatchOrNot) {
+                            normalAndCNFResults.set(normalAndCNFResults.indexOf(secondEl), derivation);
+                            normalAndCNFResults.remove(firstEl);
 
-//                    prepareSecondElementForDerivation(normalAndCNFResults, firstEl, derivation, downTop, lastElem, count);
-                    System.out.println(count + ". " + derivation + " "
-                            + openParenthesis + downTop + "," + j + closeParenthesis);
+                            System.out.println(count + ". " + derivation + " "
+                                    + openParenthesis + downTop + "," + j + closeParenthesis);
+                        }
+                    } else if (firstElComponents.length > 1 && secondElComponents.length == 1) {
+                        if (hasMatchOrNot) {
+                            normalAndCNFResults.set(normalAndCNFResults.indexOf(firstEl), derivation);
+                            normalAndCNFResults.remove(secondEl);
+
+                            System.out.println(count + ". " + derivation + " "
+                                    + openParenthesis + downTop + "," + j + closeParenthesis);
+                        }
+                    }
+
                 } else if (firstEl.contains(andOperator)) {
                     normalAndCNFResults.remove(firstEl);
                     normalAndCNFResults.remove(secondEl);
@@ -217,10 +239,14 @@ public class Solution {
                     normalAndCNFResults.remove(firstEl);
                     normalAndCNFResults.remove(secondEl);
                     normalAndCNFResults.add(derivation);
+                    skipRecursivePaths = true;
+
                     System.out.println(count + ". " + derivation + " "
                             + openParenthesis + downTop + "," + j + closeParenthesis);
                 }
-
+                if (skipRecursivePaths) {
+                    return derivation;
+                }
                 break;
             } else {
                 assert derivation != null;
@@ -231,6 +257,14 @@ public class Solution {
                     normalAndCNFResults.add(derivation);
                     break;
                 } else {
+                    if (derivation.equals("")) {
+                        normalAndCNFResults.remove(firstEl);
+                        normalAndCNFResults.remove(secondEl);
+//                        String newLastEl = normalAndCNFResults.getLast();
+                        String newOneBeforeEl = normalAndCNFResults.get(normalAndCNFResults.size() - 2);
+                        prepareSecondElementForDerivation(normalAndCNFResults, newOneBeforeEl, null,
+                                downTop, lastElem, count);
+                    }
                     if (derivation.equals(noMatchNextPairs)) {
                         normalAndCNFResults.remove(firstEl);
 
@@ -248,6 +282,20 @@ public class Solution {
         }
 
         return derivation;
+    }
+
+    private static boolean findIfAnyMatches(String[] firstElComponents, String[] secondElComponents) {
+        boolean hasMatchOrNot = false;
+        for (String firstElComponent : firstElComponents) {
+            if (firstElComponent.contains(negateTheValue))
+                firstElComponent = firstElComponent.replace(negateTheValue, "");
+            for (String secondElComponent : secondElComponents) {
+                if (secondElComponent.contains(negateTheValue))
+                    secondElComponent = secondElComponent.replace(negateTheValue, "");
+                hasMatchOrNot = firstElComponent.equals(secondElComponent);
+            }
+        }
+        return hasMatchOrNot;
     }
 
     private static String derivationOfElements(String firstClause, String secondClause) {
@@ -379,7 +427,7 @@ public class Solution {
                 }
                 elements.add(logicalEl);
             }
-        } else {
+        } else if (firstElement.getElementName().equals(expressionClause)) {
             LogicalElement logicalEl = new LogicalElement(expressionClause);
 
             if (logicalEl.getElementName().contains(negateTheValue)) {
