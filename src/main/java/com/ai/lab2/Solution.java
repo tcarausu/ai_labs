@@ -15,8 +15,6 @@ import static org.apache.commons.lang3.StringUtils.*;
 
 public class Solution {
 
-    static LinkedHashMap<String, HashMap<String, ArrayList<LogicalElement>>> mapForCNF = new LinkedHashMap<>();
-    static LinkedHashMap<String, ArrayList<LogicalElement>> promiseWithElements = new LinkedHashMap<>();
     static AtomicBoolean noDerivationPossible = new AtomicBoolean();
 
     static AtomicReference<String> atomicStringReference = new AtomicReference<>();
@@ -41,7 +39,7 @@ public class Solution {
         String lastElem = listOfPremises.get(listOfPremises.size() - 1);
         String initialGoal = lastElem;
         for (String currentPremise : listOfPremises) {
-            ArrayList<LogicalElement> elementsToCompare = new ArrayList<>();
+            LinkedList<LogicalElement> elementsToCompare = new LinkedList<>();
 
             String[] comparableOperators = trimByOperator(currentPremise, orOperator + "|" + andOperator
                     + "|" + andOperator + "|" + implyOperator + "|" + equivalent);
@@ -60,13 +58,10 @@ public class Solution {
 
                 if (elementsToCompare.size() > 1) {
                     if (currentPremise.equals(lastElem)) {
-                        currentPremise = negateTheValue + openParenthesis + elementsToCompare.get(0).getElementName()
-                                + element.getOperator() + elementsToCompare.get(1).getElementName() + closeParenthesis;
+                        currentPremise = negateTheValue + openParenthesis + getElementPremise(elementsToCompare, element.getOperator()) + closeParenthesis;
                     }
                     currentPremise = cnfConvert(currentPremise, elementsToCompare, element.getOperator());
                 }
-                promiseWithElements.put(element.getOperator(), elementsToCompare);
-                mapForCNF.put(currentPremise, promiseWithElements);
                 if (!normalAndCNFResults.contains(currentPremise)) {
                     normalAndCNFResults.add(currentPremise);
                 }
@@ -141,33 +136,28 @@ public class Solution {
             System.out.println("=============");
             elementLoopLabel:
             for (String element : elements) {
-//                if (normalAndCNFResults.size() > 1 && !noDerivationPossible.get()) {
-                    normalAndCNFResults.set(initialCNFResults.size() - 1, element);
+                normalAndCNFResults.set(initialCNFResults.size() - 1, element);
 
-                    for (int j = normalAndCNFResults.size(); j > 0; j--) {
+                for (int j = normalAndCNFResults.size(); j > 0; j--) {
 
-                        int downTop = j - 1;
-                        firstEl = normalAndCNFResults.get(downTop);
+                    int downTop = j - 1;
+                    firstEl = normalAndCNFResults.get(downTop);
 
-                        derivation = prepareSecondElementForDerivation(normalAndCNFResults, firstEl, derivation,
-                                downTop, element, count.get());
-                        count.getAndIncrement();
+                    derivation = prepareSecondElementForDerivation(normalAndCNFResults, firstEl, derivation,
+                            downTop, element, count.get());
+                    count.getAndIncrement();
 
-                        if (noDerivationPossible.get()) {
-                            normalAndCNFResults = initialCNFResults;
-                        }
-                        if (derivation.equals(NIL)) {
-                            System.out.println("=============");
-                            System.out.println(initialGoal + " is true");
-                            System.out.println("=============");
-                            break elementLoopLabel;
-                        }
+                    if (noDerivationPossible.get()) {
+                        normalAndCNFResults = initialCNFResults;
                     }
-//                } else {
-//                    if (noDerivationPossible.get()) {
-//                        normalAndCNFResults = initialCNFResults;
-//                    }
-//                }
+                    if (derivation.equals(NIL)) {
+                        System.out.println("=============");
+                        System.out.println(initialGoal + " is true");
+                        System.out.println("=============");
+                        break elementLoopLabel;
+                    }
+                }
+
             }
         }
     }
@@ -345,13 +335,37 @@ public class Solution {
                 }
                 return result;
             } else if (firstClause.contains(andOperator)) {
+//                String result = "";
+//                String[] elements = trimByOperator(firstClause, andOperator);
+//                for (String element : elements) {
+//                    result = retrieveElements(element, secondClause,
+//                            firstClause.contains(negateTheValue), element.replace(negateTheValue, ""));
+//                    if (result.equals("")) {
+//                        result = result.replace(element, "");
+//                    }
+//                }
+//                return result;
                 String result = "";
                 String[] elements = trimByOperator(firstClause, andOperator);
+                StringBuilder firstClauseBuilder = new StringBuilder(firstClause);
                 for (String element : elements) {
                     result = retrieveElements(element, secondClause,
-                            firstClause.contains(negateTheValue), element.replace(negateTheValue, ""));
+                            firstClauseBuilder.toString().contains(negateTheValue),
+                            element.replace(negateTheValue, ""));
                     if (result.equals("")) {
-                        result = result.replace(element, "");
+                        firstClauseBuilder.append("end");
+                        result = firstClauseBuilder.toString().replace(element, "");
+                        elements = trimByOperator(result.replace("end", ""), andOperator);
+                        if (elements.length == 1) {
+                            String remainingEl = elements[0];
+                            if (remainingEl.startsWith("v ")) {
+                                result = remainingEl.replace("v ", "");
+                            } else if (remainingEl.endsWith(" v")) {
+                                result = remainingEl.replace(" v", "");
+                            }
+                            return result;
+                        }
+                        result = result.replace(andOperator + "end", "");
                     }
                 }
                 return result;
@@ -570,7 +584,7 @@ public class Solution {
         elemAndNegation.add(logicalElement);
     }
 
-    public static String cnfConvert(String currentPremise, ArrayList<LogicalElement> premises, String operator) {
+    public static String cnfConvert(String currentPremise, LinkedList<LogicalElement> premises, String operator) {
         LogicalElement firstElement = premises.get(0);
         LogicalElement secondElement = premises.get(1);
 
@@ -582,9 +596,8 @@ public class Solution {
                     currentPremise = removeDoubleNegation(currentPremise);
                 }
                 if (currentPremise.contains(negateTheValue + openParenthesis)) {
-                    currentPremise = moveNegationOntoAtoms(currentPremise, operator);
+                    currentPremise = moveNegationOntoAtoms(currentPremise, premises, operator);
                 }
-                int i = 0;
             } else {
                 //~ = negation of first elem = implication elim.
                 int indexOfP = indexOf(currentPremise, negateTheValue + openParenthesis);
@@ -596,10 +609,10 @@ public class Solution {
                 }
                 if (currentPremise.contains(negateTheValue + openParenthesis)) {
                     if (currentPremise.contains(closeParenthesis + orOperator + openParenthesis)) {
-                        currentPremise = moveNegationOntoAtoms(currentPremise, orOperator);
+                        currentPremise = moveNegationOntoAtoms(currentPremise, premises, orOperator);
 
                     } else if (currentPremise.contains(closeParenthesis + andOperator + openParenthesis)) {
-                        currentPremise = moveNegationOntoAtoms(currentPremise, andOperator);
+                        currentPremise = moveNegationOntoAtoms(currentPremise, premises, andOperator);
 
                     }
                 }
@@ -615,59 +628,111 @@ public class Solution {
             }
 
             if (currentPremise.contains(negateTheValue + openParenthesis)) {
-                currentPremise = moveNegationOntoAtoms(currentPremise, operator);
+                currentPremise = moveNegationOntoAtoms(currentPremise, premises, operator);
             }
 
         }
+
         if (currentPremise.contains(negateTheValue + openParenthesis)) {
-            currentPremise = moveNegationOntoAtoms(currentPremise, operator);
+            currentPremise = moveNegationOntoAtoms(currentPremise, premises, operator);
         }
 
         return currentPremise;
     }
 
-    private static String moveNegationOntoAtoms(String currentPremise, String operator) {
-        int indexOfP = indexOf(currentPremise, operator);
-        String firstSubstring = substring(currentPremise, 0, indexOfP);
-        String secondSubstring = substring(currentPremise, indexOfP);
+    private static String moveNegationOntoAtoms(String currentPremise, LinkedList<LogicalElement> premises, String operator) {
         String negatedOp = negateOperator(operator);
-        String firstString;
-        String secondString;
-        if (currentPremise.contains(closeParenthesis + orOperator + openParenthesis)) {
-            firstString = currentPremise.substring(currentPremise.indexOf(negateTheValue) + 2, currentPremise.indexOf(orOperator));
-            secondString = currentPremise.substring(currentPremise.indexOf(orOperator))
-                    .replace(orOperator, "").replace(closeParenthesis + closeParenthesis, closeParenthesis);
 
-            String s = "s";
-        } else if (currentPremise.contains(closeParenthesis + andOperator + openParenthesis)) {
-            firstString = currentPremise.substring(currentPremise.indexOf(negateTheValue) + 2, currentPremise.indexOf(andOperator));
-            secondString = currentPremise.substring(currentPremise.indexOf(andOperator))
-                    .replace(andOperator, "").replace(closeParenthesis + closeParenthesis, closeParenthesis);
-            String[] firstStringElements = firstString.split(orOperator);
-            String firstStringElement1 = negateTheValue + firstStringElements[0].replace(openParenthesis, "");
-            String firstStringElement2 = negateTheValue + firstStringElements[1].replace(closeParenthesis, "");
+        LinkedList<String> listOfElements = new LinkedList<>();
+        StringBuilder finalPremise = new StringBuilder();
 
-            String[] secondStringElements = secondString.split(orOperator);
-            String secondStringElement1 = negateTheValue + secondStringElements[0].replace(openParenthesis, "");
-            String secondStringElement2 = negateTheValue + secondStringElements[1].replace(closeParenthesis, "");
+        if (currentPremise.contains(closeParenthesis)
+                && currentPremise.contains(operator)
+                && currentPremise.contains(openParenthesis)) {
 
-            String firstNegatedAtom = firstStringElement1 + andOperator + firstStringElement2;
-            String secondNegatedAtom = secondStringElement1 + andOperator + secondStringElement2;
+            for (int i = 0; i < premises.size() - 1; i++) {
+                LogicalElement element = premises.get(i);
+                LogicalElement followingEl = premises.get(i + 1);
 
-            currentPremise = openParenthesis + firstNegatedAtom + closeParenthesis + negatedOp + openParenthesis + secondNegatedAtom + closeParenthesis;
+                String elementName = element.getElementName();
+                String follElementName = followingEl.getElementName();
 
-            if (currentPremise.contains(doubleNegationOp)) {
-                currentPremise = removeDoubleNegation(currentPremise);
+                if (!listOfElements.contains(elementName)) {
+                    if (!listOfElements.contains(elementName + operator)) {
+                        listOfElements.add(elementName + operator);
+                        int currentPos = listOfElements.indexOf(elementName + operator);
+                        finalPremise.append(negateTheValue).append(listOfElements.get(currentPos));
+                    }
+                }
+                if (!listOfElements.contains(follElementName)) {
+                    if (!listOfElements.contains(follElementName + operator)) {
+                        listOfElements.add(follElementName + operator);
+                        int currentPos = listOfElements.indexOf(follElementName + operator);
+                        finalPremise.append(negateTheValue).append(listOfElements.get(currentPos));
+                    }
+                }
             }
 
-            String s = "s";
-        } else {
-            String firstNegatedAtom = firstSubstring.replace(openParenthesis, "");
-            String secondNegatedAtom = negateTheValue + secondSubstring.replace(closeParenthesis, "").replace(operator, "");
+            replaceString(finalPremise, operator, negatedOp);
+//            finalPremise = finalPremise.replace(finalPremise.indexOf(operator), finalPremise.indexOf(operator) + operator.length(), negatedOp);
 
-            currentPremise = firstNegatedAtom + negatedOp + secondNegatedAtom;
-            int i = 9;
+            if (finalPremise.toString().endsWith(negatedOp)) {
+                finalPremise.append("end");
+                finalPremise = new StringBuilder(finalPremise.toString().replace(negatedOp + "end", ""));
+            }
+
+            if (finalPremise.toString().contains(doubleNegationOp)) {
+                replaceString(finalPremise, doubleNegationOp, "");
+            }
+            currentPremise = String.valueOf(finalPremise);
         }
         return currentPremise;
     }
+
+    public static void replaceString(StringBuilder sb, String toReplace, String replacement) {
+        int index;
+        while ((index = sb.lastIndexOf(toReplace)) != -1) {
+            sb.replace(index, index + toReplace.length(), replacement);
+        }
+    }
+
+    public static String getElementPremise(LinkedList<LogicalElement> elementsToCompare, String operator) {
+        LinkedList<String> listOfElements = new LinkedList<>();
+
+        StringBuilder currentPremise = new StringBuilder();
+
+        for (int i = 0; i < elementsToCompare.size() - 1; i++) {
+            LogicalElement element = elementsToCompare.get(i);
+            LogicalElement followingEl = elementsToCompare.get(i + 1);
+
+            String elementName = element.getElementName();
+            String follElementName = followingEl.getElementName();
+
+            if (!listOfElements.contains(elementName)) {
+                if (!listOfElements.contains(elementName + operator)) {
+                    listOfElements.add(elementName + operator);
+                    int currentPos = listOfElements.indexOf(elementName + operator);
+                    currentPremise.append(listOfElements.get(currentPos));
+                }
+            }
+            if (!listOfElements.contains(follElementName)) {
+                if (!listOfElements.contains(follElementName + operator)) {
+                    listOfElements.add(follElementName + operator);
+                    int currentPos = listOfElements.indexOf(follElementName + operator);
+                    currentPremise.append(listOfElements.get(currentPos));
+                }
+            }
+        }
+
+        if (currentPremise.toString().endsWith(orOperator)) {
+            currentPremise.append("end");
+            currentPremise = new StringBuilder(currentPremise.toString().replace(orOperator + "end", ""));
+        } else if (currentPremise.toString().endsWith(andOperator)) {
+            currentPremise.append("end");
+            currentPremise = new StringBuilder(currentPremise.toString().replace(andOperator + "end", ""));
+        }
+        return currentPremise.toString();
+
+    }
+
 }

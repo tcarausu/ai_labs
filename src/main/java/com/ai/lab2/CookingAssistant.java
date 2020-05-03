@@ -32,7 +32,7 @@ public class CookingAssistant {
 //        } else if (line.equals("test")) {
 
             Scanner interactive = new Scanner(new File(Constant.chicken_alfredo));
-//            Scanner interactive = new Scanner(new File(Constant.coffee));
+//        Scanner interactive = new Scanner(new File(Constant.coffee));
 //
 //            System.out.println("Please write down the command: ");
 //            String testCommand = sc.nextLine();
@@ -49,8 +49,8 @@ public class CookingAssistant {
 //            } else if (testCommand.endsWith(clauseRemoval)) {
 //                valueToTest = new AtomicReference<>(lowerCase(testCommand.replace(clauseRemoval, "")));
 
-                refutationResolution(interactive);
-                interactive.close();
+        refutationResolution(interactive);
+        interactive.close();
 //            }
 //            sc.close();
 //
@@ -73,7 +73,7 @@ public class CookingAssistant {
         String lastElem = listOfPremises.get(listOfPremises.size() - 1);
         String initialGoal = lastElem;
         for (String currentPremise : listOfPremises) {
-            ArrayList<LogicalElement> elementsToCompare = new ArrayList<>();
+            LinkedList<LogicalElement> elementsToCompare = new LinkedList<>();
 
             String[] comparableOperators = trimByOperator(currentPremise, orOperator + "|" + andOperator
                     + "|" + andOperator + "|" + implyOperator + "|" + equivalent);
@@ -92,13 +92,10 @@ public class CookingAssistant {
 
                 if (elementsToCompare.size() > 1) {
                     if (currentPremise.equals(lastElem)) {
-                        currentPremise = negateTheValue + openParenthesis + elementsToCompare.get(0).getElementName()
-                                + element.getOperator() + elementsToCompare.get(1).getElementName() + closeParenthesis;
+                        currentPremise = negateTheValue + openParenthesis + getElementPremise(elementsToCompare, element.getOperator()) + closeParenthesis;
                     }
                     currentPremise = cnfConvert(currentPremise, elementsToCompare, element.getOperator());
                 }
-                promiseWithElements.put(element.getOperator(), elementsToCompare);
-                mapForCNF.put(currentPremise, promiseWithElements);
                 if (!normalAndCNFResults.contains(currentPremise)) {
                     normalAndCNFResults.add(currentPremise);
                 }
@@ -113,10 +110,16 @@ public class CookingAssistant {
             count.getAndIncrement();
         }
 
+        String currentLast = normalAndCNFResults.get(normalAndCNFResults.size() - 1);
+        if (currentLast.length() == 2 || currentLast.length() == 1) {
+            System.out.println(count + ". " + negationElement(lastElem));
+            System.out.println("=============");
+        }
+
         System.out.println("=============");
         String[] lastElements = new String[0];
 
-        LinkedList<String> lastElementsList = null;
+        LinkedList<String> lastElementsList;
         String negatedElem = "";
         if (lastElem.contains(orOperator)) {
             lastElements = trimByOperator(lastElem, orOperator);
@@ -127,63 +130,43 @@ public class CookingAssistant {
             lastElementsList = new LinkedList<>(Arrays.asList(lastElements));
             lastElementsList.add(andOperator);
         }
-
-        if (lastElements.length == 1) {
+        String[] elements = new String[0];
+        if (lastElements.length == 0) {
             negatedElem = negationElement(lastElem);
             if (negatedElem.contains(doubleNegationOp)) negatedElem = lastElem.replace(doubleNegationOp, "");
             normalAndCNFResults.set(normalAndCNFResults.size() - 1, negatedElem);
 
+            System.out.println(count + ". " + negationElement(lastElem));
+            System.out.println("=============");
         } else if (lastElements.length > 1) {
-            String resultAfterNegation = "";
-            for (int i = 0; i < lastElementsList.size() - 1; i++) {
-                String elem = lastElementsList.get(i);
-                elem = negationElement(elem);
-                if (elem.contains(doubleNegationOp)) elem = elem.replace(doubleNegationOp, "");
-                resultAfterNegation += elem + lastElementsList.get(lastElementsList.size() - 1);
-                normalAndCNFResults.set(normalAndCNFResults.size() - 1, resultAfterNegation);
+            if (lastElem.contains(orOperator)) {
+                elements = trimByOperator(lastElem, orOperator);
+            } else if (lastElem.contains(andOperator)) {
+                elements = trimByOperator(lastElem, andOperator);
             }
-            String lastNormal = normalAndCNFResults.getLast();
-            if (lastNormal.endsWith(orOperator)) {
-                lastNormal = lastNormal + "end";
-                normalAndCNFResults.set(normalAndCNFResults.size() - 1, lastNormal);
-                lastNormal = lastNormal.replace(orOperator + "end", "");
-                normalAndCNFResults.set(normalAndCNFResults.size() - 1, lastNormal);
-            } else if (lastNormal.endsWith(andOperator)) {
-                lastNormal = lastNormal + "end";
-                normalAndCNFResults.set(normalAndCNFResults.size() - 1, lastNormal);
-                lastNormal = lastNormal.replace(andOperator + "end", "");
-                normalAndCNFResults.set(normalAndCNFResults.size() - 1, lastNormal);
+            for (String element : elements) {
+                System.out.println(count.getAndIncrement() + ". " + element);
             }
-
-            System.out.println(count + ". " + lastNormal);
-            System.out.println("=============");
-        } else {
-            negatedElem = negationElement(lastElem);
-            if (negatedElem.contains(doubleNegationOp)) negatedElem = lastElem.replace(doubleNegationOp, "");
-            normalAndCNFResults.set(normalAndCNFResults.size() - 1, negatedElem);
-
-            System.out.println(count + ". " + negationElement(lastElem));
             System.out.println("=============");
         }
 
-        String currentLast = normalAndCNFResults.get(normalAndCNFResults.size() - 1);
-        if (currentLast.length() == 2 || currentLast.length() == 1) {
-            System.out.println(count + ". " + negationElement(lastElem));
-            System.out.println("=============");
-        }
 
         String derivation = null;
         LinkedList<String> initialCNFResults = new LinkedList<>(normalAndCNFResults);
 
         if (lastElem.length() > 2) {
-
+//            for (String goal : elements) {
+//
+//                boolean possibleOrNot = deriveIfPossible(count, normalAndCNFResults, goal, initialGoal, derivation, null, initialCNFResults);
+//            }
             boolean possibleOrNot = deriveIfPossible(count, normalAndCNFResults, lastElem, initialGoal, derivation, null, initialCNFResults);
 
-            if (!possibleOrNot) {
-                LinkedList<String> initialPremises = new LinkedList<>(listOfPremises);
-                boolean possible = deriveIfPossible(count, initialPremises, lastElem, initialGoal, derivation, valueToTest.get(), initialCNFResults);
-                String s = "s";
-            }
+//            String v = "v";
+//            if (!possibleOrNot) {
+//                LinkedList<String> initialPremises = new LinkedList<>(listOfPremises);
+//                boolean possible = deriveIfPossible(count, initialPremises, lastElem, initialGoal, derivation, valueToTest.get(), initialCNFResults);
+//                String s = "s";
+//            }
         }
     }
 
