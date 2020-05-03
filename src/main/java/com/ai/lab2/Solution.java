@@ -27,7 +27,7 @@ public class Solution {
 //        Scanner sc = new Scanner(new File(Constant.small_ex_3));
         Scanner sc = new Scanner(new File(Constant.small_ex_4));
 
-        AtomicInteger count = new AtomicInteger();
+        AtomicInteger count = new AtomicInteger(1);
         ArrayList<String> listOfPremises = new ArrayList<>();
         LinkedList<String> normalAndCNFResults = new LinkedList<>();
 
@@ -75,10 +75,10 @@ public class Solution {
         }
 
         System.out.println("=============");
-        for (int i = count.get(); i < listOfPremises.size() - 1; i++) {
-            count.getAndIncrement();
+        for (int i = 0; i < listOfPremises.size() - 1; i++) {
             String element = listOfPremises.get(i);
-            System.out.println(i + ". " + element);
+            System.out.println(count + ". " + element);
+            count.getAndIncrement();
         }
 
         System.out.println("=============");
@@ -141,28 +141,33 @@ public class Solution {
             System.out.println("=============");
             elementLoopLabel:
             for (String element : elements) {
-                normalAndCNFResults.set(initialCNFResults.size() - 1, element);
+//                if (normalAndCNFResults.size() > 1 && !noDerivationPossible.get()) {
+                    normalAndCNFResults.set(initialCNFResults.size() - 1, element);
 
-                for (int j = normalAndCNFResults.size(); j > 0; j--) {
+                    for (int j = normalAndCNFResults.size(); j > 0; j--) {
 
-                    int downTop = j - 1;
-                    firstEl = normalAndCNFResults.get(downTop);
+                        int downTop = j - 1;
+                        firstEl = normalAndCNFResults.get(downTop);
 
-                    derivation = prepareSecondElementForDerivation(normalAndCNFResults, firstEl, derivation,
-                            downTop, element, count.get());
-                    count.getAndIncrement();
+                        derivation = prepareSecondElementForDerivation(normalAndCNFResults, firstEl, derivation,
+                                downTop, element, count.get());
+                        count.getAndIncrement();
 
-                    if (noDerivationPossible.get()) {
-                        normalAndCNFResults = initialCNFResults;
+                        if (noDerivationPossible.get()) {
+                            normalAndCNFResults = initialCNFResults;
+                        }
+                        if (derivation.equals(NIL)) {
+                            System.out.println("=============");
+                            System.out.println(initialGoal + " is true");
+                            System.out.println("=============");
+                            break elementLoopLabel;
+                        }
                     }
-                    if (derivation.equals(NIL)) {
-                        System.out.println("=============");
-                        System.out.println(initialGoal + " is true");
-                        System.out.println("=============");
-                        break elementLoopLabel;
-                    }
-
-                }
+//                } else {
+//                    if (noDerivationPossible.get()) {
+//                        normalAndCNFResults = initialCNFResults;
+//                    }
+//                }
             }
         }
     }
@@ -177,7 +182,7 @@ public class Solution {
                 secondEl = normalAndCNFResults.get(downTop - 1);
             } else if (downTop == 0) {
                 if (normalAndCNFResults.size() > 1) {
-                    secondEl = normalAndCNFResults.get(downTop);
+                    secondEl = normalAndCNFResults.getLast();
                 } else {
                     System.out.println("=============");
                     System.out.println(lastElem + " is false. As '" + derivation + "' is the last value present\n");
@@ -192,9 +197,9 @@ public class Solution {
                     && !derivation.equals(NIL) && !derivation.contains(hasMatchingLiteral_NextPairs)) {
 
                 if (firstEl.contains(orOperator)) {
-                    findMatchesForThe2Elements(normalAndCNFResults, firstEl, derivation, downTop, count, secondEl, orOperator);
+                    findMatchesForThe2Elements(normalAndCNFResults, firstEl, derivation, downTop, count, secondEl, orOperator, lastElem);
                 } else if (firstEl.contains(andOperator)) {
-                    findMatchesForThe2Elements(normalAndCNFResults, firstEl, derivation, downTop, count, secondEl, andOperator);
+                    findMatchesForThe2Elements(normalAndCNFResults, firstEl, derivation, downTop, count, secondEl, andOperator, lastElem);
                 } else {
                     normalAndCNFResults.remove(firstEl);
                     normalAndCNFResults.remove(secondEl);
@@ -217,7 +222,7 @@ public class Solution {
                     if (derivation.equals("")) {
                         normalAndCNFResults.remove(firstEl);
                         normalAndCNFResults.remove(secondEl);
-                        if(normalAndCNFResults.size()==0){
+                        if (normalAndCNFResults.size() == 0) {
                             return NIL;
                         }
                         break;
@@ -240,7 +245,8 @@ public class Solution {
         return derivation;
     }
 
-    private static void findMatchesForThe2Elements(LinkedList<String> normalAndCNFResults, String firstEl, String derivation, int downTop, int count, String secondEl, String operator) {
+    private static void findMatchesForThe2Elements(LinkedList<String> normalAndCNFResults, String firstEl, String derivation,
+                                                   int downTop, int count, String secondEl, String operator, String lastElem) {
         String elementToClear = atomicStringReference.get();
         String[] firstElComponents = trimByOperator(firstEl, operator);
         String[] secondElComponents = trimByOperator(secondEl, operator);
@@ -279,7 +285,16 @@ public class Solution {
 
                 System.out.println(count + ". " + derivation + " "
                         + openParenthesis + downTop + "," + (count - 1) + closeParenthesis);
+                if (normalAndCNFResults.size() > 1) {
+                    System.out.println(count + ". " + derivation + " "
+                            + openParenthesis + downTop + "," + (count - 1) + closeParenthesis);
+                } else {
+                    System.out.println("=============");
+                    System.out.println(lastElem + " is false. As '" + derivation + "' is the last value present\n");
+                    noDerivationPossible.getAndSet(true);
+                }
             }
+
         }
     }
 
@@ -329,8 +344,7 @@ public class Solution {
                     }
                 }
                 return result;
-            }
-            else if (firstClause.contains(andOperator)) {
+            } else if (firstClause.contains(andOperator)) {
                 String result = "";
                 String[] elements = trimByOperator(firstClause, andOperator);
                 for (String element : elements) {
@@ -341,8 +355,7 @@ public class Solution {
                     }
                 }
                 return result;
-            }
-            else if (!firstClause.contains(orOperator) && !firstClause.contains(andOperator)) {
+            } else if (!firstClause.contains(orOperator) && !firstClause.contains(andOperator)) {
                 return retrieveElements(firstClause, secondClause,
                         firstClause.contains(negateTheValue), firstClause.replace(negateTheValue, ""));
             }
@@ -443,6 +456,13 @@ public class Solution {
                     logicalEl.setHasNegation(true);
                 }
                 elements.add(logicalEl);
+                if (expressionClause.contains(simpleClause)) {
+                    if ((logicalEl.hasNegation() == firstElement.hasNegation())
+                            && (logicalEl.getElementName().equals(firstElement.getElementName()))) {
+
+                        return hasMatchingLiteral_NextPairs + expressionClause;
+                    }
+                }
             }
         } else if (firstElement.getElementName().equals(expressionClause)) {
             LogicalElement logicalEl = new LogicalElement(expressionClause);
@@ -453,7 +473,9 @@ public class Solution {
             }
             elements.add(logicalEl);
         }
+
         return compareExpresionToSingleClause(elements, operator);
+
     }
 
     private static String compareExpresionToSingleClause(ArrayList<LogicalElement> elements, String operator) {
