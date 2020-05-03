@@ -21,10 +21,6 @@ public class Solution {
 
     static AtomicReference<String> atomicStringReference = new AtomicReference<>();
 
-    public static AtomicReference<String> getAtomicStringReference() {
-        return atomicStringReference;
-    }
-
     public static void main(String[] args) throws FileNotFoundException {
 //        Scanner sc = new Scanner(new File(Constant.small_ex_1));
 //        Scanner sc = new Scanner(new File(Constant.small_ex_2));
@@ -146,6 +142,7 @@ public class Solution {
             elementLoopLabel:
             for (String element : elements) {
                 normalAndCNFResults.set(initialCNFResults.size() - 1, element);
+
                 for (int j = normalAndCNFResults.size(); j > 0; j--) {
 
                     int downTop = j - 1;
@@ -195,50 +192,9 @@ public class Solution {
                     && !derivation.equals(NIL) && !derivation.contains(hasMatchingLiteral_NextPairs)) {
 
                 if (firstEl.contains(orOperator)) {
-                    String elementToClear = atomicStringReference.get();
-                    String[] firstElComponents = trimByOperator(firstEl, orOperator);
-                    String[] secondElComponents = trimByOperator(secondEl, orOperator);
-
-                    String firstElementAdjust = "";
-                    String initialFirstEl = firstEl;
-                    boolean hasMatchOrNot = findIfAnyMatches(firstElComponents, secondElComponents);
-                    if (firstElComponents.length > 1 && secondElComponents.length > 1) {
-
-                        if (hasMatchOrNot) {
-                            firstElementAdjust = elementToClear + "end";
-                            firstEl = firstEl + "end";
-                            if (firstEl.contains(negateTheValue + elementToClear)) {
-                                firstEl = firstEl.replace(orOperator + negateTheValue + firstElementAdjust, "");
-                                normalAndCNFResults.set(normalAndCNFResults.indexOf(initialFirstEl), firstEl);
-                            }
-
-                            normalAndCNFResults.set(normalAndCNFResults.indexOf(secondEl), derivation);
-                            normalAndCNFResults.remove(secondEl);
-
-                            System.out.println(count + ". " + derivation + " "
-                                    + openParenthesis + downTop + "," + (count - 1) + closeParenthesis);
-                        }
-                    } else if (firstElComponents.length == 1 && secondElComponents.length > 1) {
-                        if (hasMatchOrNot) {
-                            normalAndCNFResults.set(normalAndCNFResults.indexOf(secondEl), derivation);
-                            normalAndCNFResults.remove(firstEl);
-
-                            System.out.println(count + ". " + derivation + " "
-                                    + openParenthesis + downTop + "," + (count - 1) + closeParenthesis);
-                        }
-                    } else if (firstElComponents.length > 1 && secondElComponents.length == 1) {
-                        if (hasMatchOrNot) {
-                            normalAndCNFResults.set(normalAndCNFResults.indexOf(firstEl), derivation);
-                            normalAndCNFResults.remove(secondEl);
-
-                            System.out.println(count + ". " + derivation + " "
-                                    + openParenthesis + downTop + "," + (count - 1) + closeParenthesis);
-                        }
-                    }
-
+                    findMatchesForThe2Elements(normalAndCNFResults, firstEl, derivation, downTop, count, secondEl, orOperator);
                 } else if (firstEl.contains(andOperator)) {
-                    normalAndCNFResults.remove(firstEl);
-                    normalAndCNFResults.remove(secondEl);
+                    findMatchesForThe2Elements(normalAndCNFResults, firstEl, derivation, downTop, count, secondEl, andOperator);
                 } else {
                     normalAndCNFResults.remove(firstEl);
                     normalAndCNFResults.remove(secondEl);
@@ -282,6 +238,49 @@ public class Solution {
         }
 
         return derivation;
+    }
+
+    private static void findMatchesForThe2Elements(LinkedList<String> normalAndCNFResults, String firstEl, String derivation, int downTop, int count, String secondEl, String operator) {
+        String elementToClear = atomicStringReference.get();
+        String[] firstElComponents = trimByOperator(firstEl, operator);
+        String[] secondElComponents = trimByOperator(secondEl, operator);
+
+        String firstElementAdjust = "";
+        String initialFirstEl = firstEl;
+        boolean hasMatchOrNot = findIfAnyMatches(firstElComponents, secondElComponents);
+        if (firstElComponents.length > 1 && secondElComponents.length > 1) {
+
+            if (hasMatchOrNot) {
+                firstElementAdjust = elementToClear + "end";
+                firstEl = firstEl + "end";
+                if (firstEl.contains(negateTheValue + elementToClear)) {
+                    firstEl = firstEl.replace(operator + negateTheValue + firstElementAdjust, "");
+                    normalAndCNFResults.set(normalAndCNFResults.indexOf(initialFirstEl), firstEl);
+                }
+
+                normalAndCNFResults.set(normalAndCNFResults.indexOf(secondEl), derivation);
+                normalAndCNFResults.remove(secondEl);
+
+                System.out.println(count + ". " + derivation + " "
+                        + openParenthesis + downTop + "," + (count - 1) + closeParenthesis);
+            }
+        } else if (firstElComponents.length == 1 && secondElComponents.length > 1) {
+            if (hasMatchOrNot) {
+                normalAndCNFResults.set(normalAndCNFResults.indexOf(secondEl), derivation);
+                normalAndCNFResults.remove(firstEl);
+
+                System.out.println(count + ". " + derivation + " "
+                        + openParenthesis + downTop + "," + (count - 1) + closeParenthesis);
+            }
+        } else if (firstElComponents.length > 1 && secondElComponents.length == 1) {
+            if (hasMatchOrNot) {
+                normalAndCNFResults.set(normalAndCNFResults.indexOf(firstEl), derivation);
+                normalAndCNFResults.remove(secondEl);
+
+                System.out.println(count + ". " + derivation + " "
+                        + openParenthesis + downTop + "," + (count - 1) + closeParenthesis);
+            }
+        }
     }
 
     private static boolean findIfAnyMatches(String[] firstElComponents, String[] secondElComponents) {
@@ -330,7 +329,8 @@ public class Solution {
                     }
                 }
                 return result;
-            } else if (firstClause.contains(andOperator)) {
+            }
+            else if (firstClause.contains(andOperator)) {
                 String result = "";
                 String[] elements = trimByOperator(firstClause, andOperator);
                 for (String element : elements) {
@@ -341,7 +341,8 @@ public class Solution {
                     }
                 }
                 return result;
-            } else if (!firstClause.contains(orOperator) && !firstClause.contains(andOperator)) {
+            }
+            else if (!firstClause.contains(orOperator) && !firstClause.contains(andOperator)) {
                 return retrieveElements(firstClause, secondClause,
                         firstClause.contains(negateTheValue), firstClause.replace(negateTheValue, ""));
             }

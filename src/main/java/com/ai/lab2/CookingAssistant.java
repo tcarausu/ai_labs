@@ -19,42 +19,42 @@ public class CookingAssistant {
     static AtomicReference<String> valueToTest = new AtomicReference<>();
 
     public static void main(String[] args) throws FileNotFoundException {
-        System.out.println("Please select the working mode: ");
+//        System.out.println("Please select the working mode: ");
+//
+//        Scanner sc = new Scanner(System.in);
+//        String line = sc.nextLine();
+//
+//        if (line.equals("interactive")) {
+//            Scanner interactive = new Scanner(new File(Constant.chicken_alfredo));
+//
+//            refutationResolution(interactive);
+//            interactive.close();
+//        } else if (line.equals("test")) {
 
-        Scanner sc = new Scanner(System.in);
-        String line = sc.nextLine();
-
-        if (line.equals("interactive")) {
             Scanner interactive = new Scanner(new File(Constant.chicken_alfredo));
-
-            refutationResolution(interactive);
-            interactive.close();
-        } else if (line.equals("test")) {
-
-//        Scanner interactive = new Scanner(new File(Constant.chicken_alfredo));
-            Scanner interactive = new Scanner(new File(Constant.coffee));
-
-            System.out.println("Please write down the command: ");
-            String testCommand = sc.nextLine();
-            if (testCommand.endsWith(clauseValidity)) {
-                valueToTest = new AtomicReference<>(lowerCase(testCommand.replace(clauseValidity, "")));
-
-                refutationResolution(interactive);
-                interactive.close();
-            } else if (testCommand.endsWith(clauseAddition)) {
-                valueToTest = new AtomicReference<>(lowerCase(testCommand.replace(clauseAddition, "")));
-
-                refutationResolution(interactive);
-                interactive.close();
-            } else if (testCommand.endsWith(clauseRemoval)) {
-                valueToTest = new AtomicReference<>(lowerCase(testCommand.replace(clauseRemoval, "")));
+//            Scanner interactive = new Scanner(new File(Constant.coffee));
+//
+//            System.out.println("Please write down the command: ");
+//            String testCommand = sc.nextLine();
+//            if (testCommand.endsWith(clauseValidity)) {
+//                valueToTest = new AtomicReference<>(lowerCase(testCommand.replace(clauseValidity, "")));
+//
+//                refutationResolution(interactive);
+//                interactive.close();
+//            } else if (testCommand.endsWith(clauseAddition)) {
+//                valueToTest = new AtomicReference<>(lowerCase(testCommand.replace(clauseAddition, "")));
+//
+//                refutationResolution(interactive);
+//                interactive.close();
+//            } else if (testCommand.endsWith(clauseRemoval)) {
+//                valueToTest = new AtomicReference<>(lowerCase(testCommand.replace(clauseRemoval, "")));
 
                 refutationResolution(interactive);
                 interactive.close();
-            }
-            sc.close();
-
-        }
+//            }
+//            sc.close();
+//
+//        }
     }
 
     private static void refutationResolution(Scanner sc) {
@@ -172,24 +172,26 @@ public class CookingAssistant {
             System.out.println("=============");
         }
 
-        String firstEl;
         String derivation = null;
+        LinkedList<String> initialCNFResults = new LinkedList<>(normalAndCNFResults);
 
         if (lastElem.length() > 2) {
 
-            boolean possibleOrNot = deriveIfPossible(count, normalAndCNFResults, lastElem, initialGoal, derivation, null);
-            if (!possibleOrNot) {
-                deriveIfPossible(count, normalAndCNFResults, lastElem, initialGoal, derivation, valueToTest.get());
+            boolean possibleOrNot = deriveIfPossible(count, normalAndCNFResults, lastElem, initialGoal, derivation, null, initialCNFResults);
 
+            if (!possibleOrNot) {
+                LinkedList<String> initialPremises = new LinkedList<>(listOfPremises);
+                boolean possible = deriveIfPossible(count, initialPremises, lastElem, initialGoal, derivation, valueToTest.get(), initialCNFResults);
+                String s = "s";
             }
         }
     }
 
     private static boolean deriveIfPossible(AtomicInteger count, LinkedList<String> normalAndCNFResults,
                                             String lastElem, String initialGoal,
-                                            String derivation, String valueToTest) {
+                                            String derivation, String valueToTest, LinkedList<String> initialCNFResults) {
         if (valueToTest != null) {
-            normalAndCNFResults.add(valueToTest);
+            normalAndCNFResults.add(negateTheValue + valueToTest);
         }
         String firstEl;
         for (int j = normalAndCNFResults.size(); j > 0; j--) {
@@ -207,9 +209,7 @@ public class CookingAssistant {
                 System.out.println("=============");
                 System.out.println(initialGoal + " is true");
                 System.out.println("=============");
-                return false;
-
-//                break;
+                return true;
             }
         }
         return false;
