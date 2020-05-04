@@ -2,6 +2,8 @@ package com.ai.utils;
 
 import com.ai.lab2.LogicalElement;
 
+import java.util.LinkedList;
+
 import static com.ai.utils.RegexOperator.*;
 import static org.apache.commons.lang3.StringUtils.indexOf;
 import static org.apache.commons.lang3.StringUtils.substring;
@@ -59,5 +61,51 @@ public class Lab_Utils {
         return premise;
     }
 
+
+    public static void replaceString(StringBuilder sb, String toReplace, String replacement) {
+        int index;
+        while ((index = sb.lastIndexOf(toReplace)) != -1) {
+            sb.replace(index, index + toReplace.length(), replacement);
+        }
+    }
+
+    public static String getElementPremise(LinkedList<LogicalElement> elementsToCompare, String operator) {
+        LinkedList<String> listOfElements = new LinkedList<>();
+
+        StringBuilder currentPremise = new StringBuilder();
+
+        for (int i = 0; i < elementsToCompare.size() - 1; i++) {
+            LogicalElement element = elementsToCompare.get(i);
+            LogicalElement followingEl = elementsToCompare.get(i + 1);
+
+            String elementName = element.getElementName();
+            String follElementName = followingEl.getElementName();
+
+            if (!listOfElements.contains(elementName)) {
+                if (!listOfElements.contains(elementName + operator)) {
+                    listOfElements.add(elementName + operator);
+                    int currentPos = listOfElements.indexOf(elementName + operator);
+                    currentPremise.append(listOfElements.get(currentPos));
+                }
+            }
+            if (!listOfElements.contains(follElementName)) {
+                if (!listOfElements.contains(follElementName + operator)) {
+                    listOfElements.add(follElementName + operator);
+                    int currentPos = listOfElements.indexOf(follElementName + operator);
+                    currentPremise.append(listOfElements.get(currentPos));
+                }
+            }
+        }
+
+        if (currentPremise.toString().endsWith(orOperator)) {
+            currentPremise.append("end");
+            currentPremise = new StringBuilder(currentPremise.toString().replace(orOperator + "end", ""));
+        } else if (currentPremise.toString().endsWith(andOperator)) {
+            currentPremise.append("end");
+            currentPremise = new StringBuilder(currentPremise.toString().replace(andOperator + "end", ""));
+        }
+        return currentPremise.toString();
+
+    }
 
 }

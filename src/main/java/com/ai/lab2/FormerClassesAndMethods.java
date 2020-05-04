@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import static com.ai.lab2.Solution.extractComparableElements;
-import static com.ai.lab2.Solution.twoElementOperatorNegationComparison;
 import static com.ai.utils.Lab_Utils.trimByOperator;
 import static com.ai.utils.RegexOperator.*;
 import static org.apache.commons.lang3.StringUtils.lowerCase;
@@ -216,5 +214,40 @@ public class FormerClassesAndMethods {
         return singleWithExpression;
     }
 
+
+    public static void extractComparableElements(ArrayList<LogicalElement> elemAndNegation,
+                                                 String[] comparableOperatorsFirstClause) {
+        String firstClauseElem1 = comparableOperatorsFirstClause[0];
+        String firstClauseElem2 = comparableOperatorsFirstClause[1];
+
+        set_Element_Op(elemAndNegation, firstClauseElem1);
+        set_Element_Op(elemAndNegation, firstClauseElem2);
+    }
+
+
+    public static void set_Element_Op(ArrayList<LogicalElement> elemAndNegation, String firstClauseElem2) {
+        LogicalElement logicalElement = new LogicalElement(firstClauseElem2.replace(negateTheValue, ""));
+        if (firstClauseElem2.contains(negateTheValue)) {
+            logicalElement.setOperator(negateTheValue);
+            logicalElement.setHasNegation(true);
+        } else {
+            logicalElement.setOperator("");
+        }
+        elemAndNegation.add(logicalElement);
+    }
+
+    public static String twoElementOperatorNegationComparison(String operator, String singleWithExpression, LogicalElement firstElementFromSecondClause, LogicalElement secondElementFromSecondClause) {
+        if (secondElementFromSecondClause.hasNegation()) {
+            singleWithExpression = negateTheValue + secondElementFromSecondClause.getElementName();
+        } else if (!secondElementFromSecondClause.hasNegation()) {
+            singleWithExpression = secondElementFromSecondClause.getElementName();
+        }
+        if (firstElementFromSecondClause.hasNegation()) {
+            singleWithExpression = singleWithExpression + operator + negateTheValue + firstElementFromSecondClause.getElementName();
+        } else if (!firstElementFromSecondClause.hasNegation()) {
+            singleWithExpression = singleWithExpression + operator + firstElementFromSecondClause.getElementName();
+        }
+        return singleWithExpression;
+    }
 
 }
