@@ -1,6 +1,7 @@
 package com.ai.lab2;
 
 import com.ai.utils.Constant;
+import com.ai.utils.RegexOperator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -43,7 +44,7 @@ public class Solution {
             System.out.println(count + ". " + element);
             count.getAndIncrement();
         }
-        
+
         String lastElem = listOfPremises.get(listOfPremises.size() - 1);
         String initialGoal = lastElem;
         for (String currentPremise : listOfPremises) {
@@ -189,7 +190,14 @@ public class Solution {
                 }
             }
 
-            derivation = derivationOfElements(firstEl, secondEl);
+            if (normalAndCNFResults.size() > 1) {
+                derivation = derivationOfElements(firstEl, secondEl, normalAndCNFResults);
+            } else {
+                System.out.println("=============");
+                System.out.println(lastElem + " is false. As '" + normalAndCNFResults.getLast() + "' is the last value present\n");
+                noDerivationPossible.getAndSet(true);
+                break;
+            }
 
             if (derivation != null && !derivation.equals(noMatchNextPairs) && !derivation.equals("")
                     && !derivation.equals(NIL) && !derivation.contains(hasMatchingLiteral_NextPairs)) {
@@ -227,7 +235,6 @@ public class Solution {
                     if (derivation.equals(noMatchNextPairs)) {
                         if (!firstEl.contains(orOperator) && !firstEl.contains(andOperator)) {
                             normalAndCNFResults.remove(firstEl);
-
                         }
 
                         downTop--;
@@ -251,21 +258,35 @@ public class Solution {
         String[] firstElComponents = trimByOperator(firstEl, operator);
         String[] secondElComponents = trimByOperator(secondEl, operator);
 
-        String firstElementAdjust = "";
+        LinkedList<String> el = new LinkedList<>(Arrays.asList(firstElComponents));
+        StringBuilder firstElementAdjust = new StringBuilder();
+        StringBuilder secondElementAdjust = new StringBuilder();
         String initialFirstEl = firstEl;
+        String initialSecondEl = secondEl;
+        LinkedList<String> firstElems = new LinkedList<>(Arrays.asList(firstElComponents));
+        LinkedList<String> secElems = new LinkedList<>(Arrays.asList(secondElComponents));
+
         boolean hasMatchOrNot = findIfAnyMatches(firstElComponents, secondElComponents);
         if (firstElComponents.length > 1 && secondElComponents.length > 1) {
 
             if (hasMatchOrNot) {
-                firstElementAdjust = elementToClear + "end";
-                firstEl = firstEl + "end";
-                if (firstEl.contains(negateTheValue + elementToClear)) {
-                    firstEl = firstEl.replace(operator + negateTheValue + firstElementAdjust, "");
-                    normalAndCNFResults.set(normalAndCNFResults.indexOf(initialFirstEl), firstEl);
+                firstElems.removeIf(firstEle -> firstEle.contains(elementToClear));
+
+                for (String ele : firstElems) {
+                    firstElementAdjust.append(ele).append(operator);
                 }
 
-                normalAndCNFResults.set(normalAndCNFResults.indexOf(secondEl), derivation);
-                normalAndCNFResults.remove(secondEl);
+                if (firstElementAdjust.toString().endsWith(operator)) {
+                    firstEl = firstElementAdjust.toString() + "end";
+                    firstEl = firstEl.replace(operator + "end", "");
+                    normalAndCNFResults.set(normalAndCNFResults.indexOf(initialFirstEl), firstEl);
+                }
+                if (normalAndCNFResults.size() > 2) {
+                    normalAndCNFResults.set(normalAndCNFResults.indexOf(secondEl), derivation);
+                    normalAndCNFResults.remove(secondEl);
+                } else {
+                    normalAndCNFResults.remove(secondEl);
+                }
 
                 System.out.println(count + 1 + ". " + derivation + " "
                         + openParenthesis + downTop + "," + (count - 1) + closeParenthesis);
@@ -321,7 +342,7 @@ public class Solution {
         return hasMatchOrNot;
     }
 
-    private static String derivationOfElements(String firstClause, String secondClause) {
+    private static String derivationOfElements(String firstClause, String secondClause, LinkedList<String> normalAndCNFResults) {
         //In case that both Clause have at least an operator
         if ((firstClause.length() > 2) && (secondClause.length() > 2)) {
             if (firstClause.contains(orOperator)) {
@@ -331,21 +352,49 @@ public class Solution {
                 for (String element : elements) {
                     result = retrieveElements(element, secondClause,
                             firstClauseBuilder.toString().contains(negateTheValue),
-                            element.replace(negateTheValue, ""));
-                    if (result.equals("")) {
-                        firstClauseBuilder.append("end");
-                        result = firstClauseBuilder.toString().replace(element, "");
-                        elements = trimByOperator(result.replace("end", ""), orOperator);
-                        if (elements.length == 1) {
-                            String remainingEl = elements[0];
-                            if (remainingEl.startsWith("v ")) {
-                                result = remainingEl.replace("v ", "");
-                            } else if (remainingEl.endsWith(" v")) {
-                                result = remainingEl.replace(" v", "");
+                            element.replace(negateTheValue, ""), orOperator);
+                    if (!result.contains(element) && !result.equals(noMatchNextPairs) && !result.contains(atomicStringReference.get())) {
+                        if (result.equals("")) {
+                            firstClauseBuilder.append("end");
+                            if (elements.length > 2) {
+                                int index = firstClauseBuilder.toString().indexOf(secondClause);
+                                String initialEl = "";
+                                String endEl = "";
+
+                                if (index == 0) {
+                                    endEl = firstClauseBuilder.toString().substring(index + element.length() + 2, firstClause.length());
+
+                                } else if (index == 1) {
+                                    endEl = firstClauseBuilder.toString().substring(index + element.length() + 2, firstClause.length());
+
+                                } else {
+                                    if (element.contains(negateTheValue)) {
+                                        initialEl = firstClauseBuilder.toString().substring(0, index - 4);
+                                        endEl = firstClauseBuilder.toString().substring(index + element.length() + 2, firstClause.length());
+                                    } else {
+                                        initialEl = firstClauseBuilder.toString().substring(0, index - 3);
+                                        endEl = firstClauseBuilder.toString().substring(index + element.length(), firstClause.length());
+                                    }
+                                }
+
+                                result = initialEl + orOperator + endEl;
+                                return result;
                             }
-                            return result;
+
+                            result = firstClauseBuilder.toString().replace(element, "");
+                            elements = trimByOperator(result.replace("end", ""), orOperator);
+                            if (elements.length == 1) {
+                                String remainingEl = elements[0];
+                                if (remainingEl.startsWith("v ")) {
+                                    result = remainingEl.replace("v ", "");
+                                } else if (remainingEl.endsWith(" v")) {
+                                    result = remainingEl.replace(" v", "");
+                                }
+                                return result;
+                            }
+                            result = result.replace(orOperator + "end", "");
                         }
-                        result = result.replace(orOperator + "end", "");
+                        return result;
                     }
                 }
                 return result;
@@ -356,7 +405,10 @@ public class Solution {
                 for (String element : elements) {
                     result = retrieveElements(element, secondClause,
                             firstClauseBuilder.toString().contains(negateTheValue),
-                            element.replace(negateTheValue, ""));
+                            element.replace(negateTheValue, ""), andOperator);
+                    if (!result.contains(element) && !result.equals(noMatchNextPairs)) {
+                        return result;
+                    }
                     if (result.equals("")) {
                         firstClauseBuilder.append("end");
                         result = firstClauseBuilder.toString().replace(element, "");
@@ -376,7 +428,7 @@ public class Solution {
                 return result;
             } else if (!firstClause.contains(orOperator) && !firstClause.contains(andOperator)) {
                 return retrieveElements(firstClause, secondClause,
-                        firstClause.contains(negateTheValue), firstClause.replace(negateTheValue, ""));
+                        firstClause.contains(negateTheValue), firstClause.replace(negateTheValue, ""), null);
             }
 
         }
@@ -394,14 +446,18 @@ public class Solution {
 
                 if (elem1.getElementName().equals(elem2.getElementName())) {
                     if (elem1.hasNegation() != elem2.hasNegation()) {
-                        return NIL;
+                        if (normalAndCNFResults.size() == 2) {
+                            return NIL;
+                        } else {
+                            return "";
+                        }
                     }
                 } else if (!elem1.equals(elem2)) {
                     return noMatchNextPairs;
                 }
             } else if (firstClause.length() > 2) {
                 return retrieveElements(secondClause, firstClause,
-                        secondClause.contains(negateTheValue), firstClause.replace(negateTheValue, ""));
+                        secondClause.contains(negateTheValue), firstClause.replace(negateTheValue, ""), null);
             }
         }
 
@@ -417,7 +473,11 @@ public class Solution {
                 }
                 if (elem1.getElementName().equals(elem2.getElementName())) {
                     if (elem1.hasNegation() != elem2.hasNegation()) {
-                        return NIL;
+                        if (normalAndCNFResults.size() == 2) {
+                            return NIL;
+                        } else {
+                            return "";
+                        }
                     }
                 } else if (!elem1.equals(elem2)) {
                     return noMatchNextPairs;
@@ -425,7 +485,7 @@ public class Solution {
 
             } else if (secondClause.length() > 2) {
                 return retrieveElements(firstClause, secondClause,
-                        firstClause.contains(negateTheValue), firstClause.replace(negateTheValue, ""));
+                        firstClause.contains(negateTheValue), firstClause.replace(negateTheValue, ""), null);
             }
         }
 
@@ -433,7 +493,7 @@ public class Solution {
         else if (firstClause.length() == 2) {
             if (secondClause.length() > 2) {
                 return retrieveElements(firstClause, secondClause,
-                        firstClause.contains(negateTheValue), firstClause.replace(negateTheValue, ""));
+                        firstClause.contains(negateTheValue), firstClause.replace(negateTheValue, ""), null);
             }
         }
 
@@ -441,17 +501,23 @@ public class Solution {
         else if (secondClause.length() == 2) {
             if (firstClause.length() > 2) {
                 return retrieveElements(secondClause, firstClause,
-                        secondClause.contains(negateTheValue), secondClause.replace(negateTheValue, ""));
+                        secondClause.contains(negateTheValue), secondClause.replace(negateTheValue, ""), null);
             }
         }
 
         return null;
     }
 
-    private static String retrieveElements(String simpleClause, String expressionClause, boolean contains, String replace) {
+    private static String retrieveElements(String simpleClause, String expressionClause, boolean contains, String replace, String testOperator) {
         String operator = "";
-        if (expressionClause.contains(orOperator) || expressionClause.contains(lowerCase(orOperator))) {
-            operator = orOperator;
+        if (!expressionClause.contains(RegexOperator.orOperator)
+                && !expressionClause.contains(lowerCase(RegexOperator.orOperator))
+                && !expressionClause.contains(lowerCase(andOperator))) {
+            operator = testOperator;
+        }
+        if (expressionClause.contains(RegexOperator.orOperator)
+                || expressionClause.contains(lowerCase(RegexOperator.orOperator))) {
+            operator = RegexOperator.orOperator;
         } else if (expressionClause.contains(andOperator)) {
             operator = andOperator;
         }
@@ -466,30 +532,29 @@ public class Solution {
             firstElement.setHasNegation(true);
         }
         if (!firstElement.getElementName().equals(expressionClause)) {
-            String[] expresionClauseElements = trimByOperator(expressionClause, operator);
-            for (String expression : expresionClauseElements) {
-                LogicalElement logicalEl = new LogicalElement(expression);
+            if (operator != null) {
+                String[] expresionClauseElements = trimByOperator(expressionClause, operator);
+                for (String expressionElement : expresionClauseElements) {
+                    LogicalElement logicalEl = new LogicalElement(expressionElement);
 
-                if (logicalEl.getElementName().contains(negateTheValue)) {
-                    logicalEl.setElementName(expression.replace(negateTheValue, ""));
-                    logicalEl.setHasNegation(true);
-                }
-                elements.add(logicalEl);
-                if (expressionClause.contains(simpleClause)) {
-                    if ((logicalEl.hasNegation() == firstElement.hasNegation())
-                            && (logicalEl.getElementName().equals(firstElement.getElementName()))) {
-
-                        return hasMatchingLiteral_NextPairs + expressionClause;
+                    if (logicalEl.getElementName().contains(negateTheValue)) {
+                        logicalEl.setElementName(expressionElement.replace(negateTheValue, ""));
+                        logicalEl.setHasNegation(true);
                     }
+                    elements.add(logicalEl);
+                    if (expressionClause.contains(expressionElement)) {
+                        if ((logicalEl.hasNegation() == firstElement.hasNegation())
+                                && (logicalEl.getElementName().equals(firstElement.getElementName()))) {
+
+                            return hasMatchingLiteral_NextPairs + expressionClause;
+                        }
+                    }
+
                 }
-//                else if (!expressionClause.contains(simpleClause)) {
-//                    if ((logicalEl.hasNegation() == firstElement.hasNegation())
-//                            && (logicalEl.getElementName().equals(firstElement.getElementName()))) {
-//
-//                        return hasMatchingLiteral_NextPairs + expressionClause;
-//                    }
-//                }
+            } else {
+                return noMatchNextPairs;
             }
+
         } else if (firstElement.getElementName().equals(expressionClause)) {
             LogicalElement logicalEl = new LogicalElement(expressionClause);
 
@@ -508,11 +573,10 @@ public class Solution {
         String singleWithExpression = null;
         String finalExpression = "";
         String firstNegOrNot;
+        LogicalElement firstEl = elements.get(0);
 
         if (elements.size() >= 2) {
             for (int i = 0; i < elements.size(); i++) {
-                LogicalElement firstEl = elements.get(0);
-
                 if (firstEl.hasNegation()) {
                     firstNegOrNot = negateTheValue;
                 } else firstNegOrNot = "";
@@ -521,11 +585,16 @@ public class Solution {
                     LogicalElement testingEl = elements.get(i + 1);
                     if (firstEl.getElementName().equals(testingEl.getElementName())) {
                         atomicStringReference = new AtomicReference<>(testingEl.getElementName());
-                        singleWithExpression = compareSingleClauseWithElementT(operator, firstNegOrNot, firstEl, testingEl);
-                        finalExpression = finalExpression.concat(singleWithExpression);
-                        if (singleWithExpression.contains(hasMatchingLiteral_NextPairs)) {
-                            return finalExpression;
+                        singleWithExpression = compareSingleClauseWithElement(operator, firstNegOrNot, firstEl, testingEl);
+                        if (elements.size() > 2) {
+                            finalExpression = finalExpression.concat(singleWithExpression);
+                            if (singleWithExpression.contains(hasMatchingLiteral_NextPairs)) {
+                                return finalExpression;
+                            }
+                        } else {
+                            return singleWithExpression;
                         }
+
                     } else {
                         if (testingEl.hasNegation()) {
                             finalExpression = finalExpression.concat(negateTheValue + testingEl.getElementName() + operator);
@@ -548,8 +617,8 @@ public class Solution {
         return singleWithExpression;
     }
 
-    private static String compareSingleClauseWithElementT(String operator, String firstNegOrNot, LogicalElement firstClause,
-                                                          LogicalElement element) {
+    private static String compareSingleClauseWithElement(String operator, String firstNegOrNot, LogicalElement firstClause,
+                                                         LogicalElement element) {
         String singleWithExpression;
         if (firstClause.hasNegation() != element.hasNegation()) {
             singleWithExpression = "";

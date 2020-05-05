@@ -19,53 +19,96 @@ public class CookingAssistant {
     static AtomicInteger count = new AtomicInteger(1);
 
     public static void main(String[] args) throws FileNotFoundException {
-//        System.out.println("Please select the working mode: ");
-//
-//        Scanner sc = new Scanner(System.in);
-//        String line = sc.nextLine();
-//
-//        if (line.equals("interactive")) {
-//            Scanner interactive = new Scanner(new File(Constant.chicken_alfredo));
-//
-//            refutationResolution(interactive);
-//            interactive.close();
-//        } else if (line.equals("test")) {
+        System.out.println("Please select the working mode: ");
 
-//            Scanner interactive = new Scanner(new File(Constant.chicken_alfredo));
-        Scanner interactive = new Scanner(new File(Constant.coffee));
+        Scanner sc = new Scanner(System.in);
+        String line = sc.nextLine();
 
-//            System.out.println("Please write down the command: ");
-//            String testCommand = sc.nextLine();
-//            if (testCommand.endsWith(clauseValidity)) {
-//                valueToTest = new AtomicReference<>(lowerCase(testCommand.replace(clauseValidity, "")));
-//
-//                refutationResolution(interactive);
-//                interactive.close();
-//            } else if (testCommand.endsWith(clauseAddition)) {
-//                valueToTest = new AtomicReference<>(lowerCase(testCommand.replace(clauseAddition, "")));
-//
-//                refutationResolution(interactive);
-//                interactive.close();
-//            } else if (testCommand.endsWith(clauseRemoval)) {
-//                valueToTest = new AtomicReference<>(lowerCase(testCommand.replace(clauseRemoval, "")));
-//
-        refutationResolution(interactive);
-        interactive.close();
-//            }
-//            sc.close();
-//
-//        }
+        if (line.equals("int")) {//interactive
+            Scanner interactive = new Scanner(new File(Constant.coffee));
+            Scanner inputs = new Scanner(new File(Constant.coffee_input));
+            LinkedList<String> listOfPremises = retrieveKnowledge(interactive);
+            LinkedList<String> inputsToTest = new LinkedList<>();
+
+            while (inputs.hasNext()) {
+                String knowledge = lowerCase(inputs.nextLine());
+                if (knowledge.startsWith("#")) continue;
+                if (knowledge.trim().isEmpty()) continue;
+                inputsToTest.add(knowledge);
+            }
+
+            for (String input : inputsToTest) {
+                count.set(1);
+                System.out.println("\nPlease enter your query: ");
+                System.out.println("\n" + startClauseTest + input);
+
+                if (input.contains(clauseValidity)) {
+                    valueToTest = new AtomicReference<>(lowerCase(input.replace(clauseValidity, "")));
+                    int index = inputsToTest.indexOf(input);
+                    if (index != 0) {
+                        listOfPremises.removeLast();
+                    }
+                } else if (input.contains(clauseRemoval)) {
+                    valueToTest = new AtomicReference<>(lowerCase(input.replace(clauseRemoval, "")));
+                    listOfPremises.remove(valueToTest.toString());
+                } else if (input.contains(clauseAddition)) {
+                    valueToTest = new AtomicReference<>(lowerCase(input.replace(clauseAddition, "")));
+                    listOfPremises.add(valueToTest.toString());
+                }
+
+                refutationResolution(listOfPremises);
+            }
+
+            interactive.close();
+        } else if (line.equals("test")) {
+
+            Scanner interactive = new Scanner(new File(Constant.chicken_alfredo));
+//            Scanner interactive = new Scanner(new File(Constant.coffee));
+
+            LinkedList<String> listOfPremises = retrieveKnowledge(interactive);
+
+            System.out.println("Please enter your query: ");
+            String testCommandQuery = sc.nextLine();
+
+            if (testCommandQuery.endsWith(clauseValidity)) {
+                valueToTest = new AtomicReference<>(lowerCase(testCommandQuery.replace(clauseValidity, "")));
+                System.out.println("\n" + startClauseTest + testCommandQuery);
+
+                refutationResolution(listOfPremises);
+                interactive.close();
+            }
+            if (testCommandQuery.endsWith(clauseAddition)) {
+                valueToTest = new AtomicReference<>(lowerCase(testCommandQuery.replace(clauseAddition, "")));
+
+                System.out.println("\n" + startClauseTest + testCommandQuery);
+                listOfPremises.add(testCommandQuery);
+                System.out.println("added " + testCommandQuery);
+            }
+            if (testCommandQuery.endsWith(clauseRemoval)) {
+                valueToTest = new AtomicReference<>(lowerCase(testCommandQuery.replace(clauseRemoval, "")));
+
+                System.out.println("\n" + startClauseTest + testCommandQuery);
+                listOfPremises.remove(testCommandQuery);
+                System.out.println("removed " + testCommandQuery);
+
+            }
+            if (testCommandQuery.endsWith(clauseExit) || testCommandQuery.contains(clauseExit)) {
+                sc.close();
+            }
+
+        }
     }
 
-    private static void refutationResolution(Scanner sc) {
-        ArrayList<String> listOfPremises = new ArrayList<>();
+
+    private static void refutationResolution(LinkedList<String> listOfPremises) {
         LinkedList<String> normalAndCNFResults = new LinkedList<>();
 
-        while (sc.hasNext()) {
-            String line = lowerCase(sc.nextLine());
-            if (line.startsWith("#")) continue;
-            if (line.trim().isEmpty()) continue;
-            listOfPremises.add(line);
+        if (valueToTest.get() != null && !Objects.requireNonNull(valueToTest).get().equals("")) {
+            listOfPremises.add(String.valueOf(valueToTest));
+        } else {
+            System.out.println("No input");
+
+            System.exit(0);
         }
 
         System.out.println("=============");
@@ -74,9 +117,7 @@ public class CookingAssistant {
             System.out.println(count + ". " + element);
             count.getAndIncrement();
         }
-        if (valueToTest != null) {
-            listOfPremises.add(String.valueOf(valueToTest));
-        }
+
         String lastElem = listOfPremises.get(listOfPremises.size() - 1);
         String initialGoal = lastElem;
         for (String currentPremise : listOfPremises) {
@@ -108,13 +149,6 @@ public class CookingAssistant {
                 }
             }
 
-        }
-
-        System.out.println("=============");
-        for (int i = 0; i < listOfPremises.size() - 1; i++) {
-            String element = listOfPremises.get(i);
-            System.out.println(count + ". " + element);
-            count.getAndIncrement();
         }
 
         String currentLast = normalAndCNFResults.get(normalAndCNFResults.size() - 1);
@@ -172,10 +206,6 @@ public class CookingAssistant {
                             downTop, lastElem, count.get());
                     count.getAndIncrement();
 
-                    if (noDerivationPossible.get()) {
-                        normalAndCNFResults = initialCNFResults;
-
-                    }
                     if (derivation.equals(NIL)) {
                         System.out.println("=============");
                         System.out.println(initialGoal + " is true");
@@ -183,6 +213,11 @@ public class CookingAssistant {
                         break;
                     }
                 }
+                if (noDerivationPossible.get()) {
+                    normalAndCNFResults = initialCNFResults;
+
+                }
+
             }
 
             elementLoopLabel:
@@ -213,31 +248,27 @@ public class CookingAssistant {
             }
         }
     }
-//    private static boolean deriveIfPossible(AtomicInteger count, LinkedList<String> normalAndCNFResults,
-//                                            String lastElem, String initialGoal,
-//                                            String derivation, String valueToTest, LinkedList<String> initialCNFResults) {
-//        if (valueToTest != null) {
-//            normalAndCNFResults.add(negateTheValue + valueToTest);
-//        }
-//        String firstEl;
-//        for (int j = normalAndCNFResults.size(); j > 0; j--) {
-//            int downTop = j - 1;
-//            firstEl = normalAndCNFResults.get(downTop);
-//
-//            derivation = prepareSecondElementForDerivation(normalAndCNFResults, firstEl, derivation,
-//                    downTop, lastElem, count.get());
-//            count.getAndIncrement();
-//
-//            if (noDerivationPossible.get()) {
-//                return false;
-//            }
-//            if (derivation.equals(NIL)) {
-//                System.out.println("=============");
-//                System.out.println(initialGoal + " is true");
-//                System.out.println("=============");
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
+
+
+    private static LinkedList<String> retrieveKnowledge(Scanner interactive) {
+        System.out.println("\nResolution system constructed with knowledge:\n");
+
+        LinkedList<String> listOfPremises = new LinkedList<>();
+
+        while (interactive.hasNext()) {
+            String knowledge = lowerCase(interactive.nextLine());
+            if (knowledge.startsWith("#")) continue;
+            if (knowledge.trim().isEmpty()) continue;
+            listOfPremises.add(knowledge);
+        }
+
+        System.out.println("=============");
+        for (int i = 0; i < listOfPremises.size() - 1; i++) {
+            String element = listOfPremises.get(i);
+            System.out.println(currentKnowledge + element);
+        }
+        System.out.println("=============\n");
+        return listOfPremises;
+    }
+
 }

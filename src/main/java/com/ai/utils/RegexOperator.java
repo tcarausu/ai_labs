@@ -18,5 +18,8 @@ public class RegexOperator {
     public static final String clauseValidity = " ?";
     public static final String clauseAddition = " +";
     public static final String clauseRemoval = " -";
+    public static final String clauseExit = "exit";
+    public static final String currentKnowledge = "> ";
+    public static final String startClauseTest = ">>> ";
 
 }
