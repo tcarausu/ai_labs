@@ -18,7 +18,12 @@ public class CookingAssistant {
     static AtomicReference<String> valueToTest = new AtomicReference<>("coffee");
     static AtomicInteger count = new AtomicInteger(1);
 
+    public static AtomicInteger getCount() {
+        return count;
+    }
+
     public static void main(String[] args) throws FileNotFoundException {
+
         System.out.println("Please select the working mode: ");
 
         Scanner sc = new Scanner(System.in);
@@ -48,22 +53,23 @@ public class CookingAssistant {
                     if (index != 0) {
                         listOfPremises.removeLast();
                     }
+                    refutationResolution(listOfPremises);
                 } else if (input.contains(clauseRemoval)) {
                     valueToTest = new AtomicReference<>(lowerCase(input.replace(clauseRemoval, "")));
                     listOfPremises.remove(valueToTest.toString());
+                    System.out.println("removed " + valueToTest);
                 } else if (input.contains(clauseAddition)) {
                     valueToTest = new AtomicReference<>(lowerCase(input.replace(clauseAddition, "")));
                     listOfPremises.add(valueToTest.toString());
+                    System.out.println("added " + valueToTest);
                 }
 
-                refutationResolution(listOfPremises);
             }
 
             interactive.close();
         } else if (line.equals("test")) {
-
-            Scanner interactive = new Scanner(new File(Constant.chicken_alfredo));
-//            Scanner interactive = new Scanner(new File(Constant.coffee));
+//            Scanner interactive = new Scanner(new File(Constant.chicken_alfredo));
+            Scanner interactive = new Scanner(new File(Constant.coffee));
 
             LinkedList<String> listOfPremises = retrieveKnowledge(interactive);
 
@@ -76,6 +82,7 @@ public class CookingAssistant {
 
                 refutationResolution(listOfPremises);
                 interactive.close();
+
             }
             if (testCommandQuery.endsWith(clauseAddition)) {
                 valueToTest = new AtomicReference<>(lowerCase(testCommandQuery.replace(clauseAddition, "")));
@@ -102,20 +109,18 @@ public class CookingAssistant {
 
     private static void refutationResolution(LinkedList<String> listOfPremises) {
         LinkedList<String> normalAndCNFResults = new LinkedList<>();
-
         if (valueToTest.get() != null && !Objects.requireNonNull(valueToTest).get().equals("")) {
             listOfPremises.add(String.valueOf(valueToTest));
+            System.out.println("=============");
         } else {
             System.out.println("No input");
 
             System.exit(0);
         }
 
-        System.out.println("=============");
         for (int i = 0; i < listOfPremises.size() - 1; i++) {
             String element = listOfPremises.get(i);
-            System.out.println(count + ". " + element);
-            count.getAndIncrement();
+            System.out.println(count.getAndIncrement() + ". " + element);
         }
 
         String lastElem = listOfPremises.get(listOfPremises.size() - 1);
@@ -153,7 +158,7 @@ public class CookingAssistant {
 
         String currentLast = normalAndCNFResults.get(normalAndCNFResults.size() - 1);
         if (currentLast.length() == 2 || currentLast.length() == 1) {
-            System.out.println(count + ". " + negationElement(lastElem));
+            System.out.println(count.getAndIncrement() + ". " + negationElement(lastElem));
             System.out.println("=============");
         }
 
@@ -250,7 +255,7 @@ public class CookingAssistant {
     }
 
 
-    private static LinkedList<String> retrieveKnowledge(Scanner interactive) {
+    public static LinkedList<String> retrieveKnowledge(Scanner interactive) {
         System.out.println("\nResolution system constructed with knowledge:\n");
 
         LinkedList<String> listOfPremises = new LinkedList<>();
@@ -258,6 +263,7 @@ public class CookingAssistant {
         while (interactive.hasNext()) {
             String knowledge = lowerCase(interactive.nextLine());
             if (knowledge.startsWith("#")) continue;
+            if (knowledge.contains("#")) continue;
             if (knowledge.trim().isEmpty()) continue;
             listOfPremises.add(knowledge);
         }
