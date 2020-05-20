@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.ai.lab2.Solution.*;
+import static com.ai.lab2.Solution_Lab2.*;
 import static com.ai.utils.Lab_Utils.*;
 import static com.ai.utils.RegexOperator.*;
 import static org.apache.commons.lang3.StringUtils.lowerCase;

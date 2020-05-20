@@ -16,7 +16,7 @@ import static com.ai.utils.RegexOperator.*;
 import static org.apache.commons.lang3.StringUtils.indexOf;
 import static org.apache.commons.lang3.StringUtils.lowerCase;
 
-public class Solution {
+public class Solution_Lab2 {
 
     static AtomicBoolean noDerivationPossible = new AtomicBoolean();
 
@@ -27,7 +27,7 @@ public class Solution {
 //        Scanner sc = new Scanner(new File(Constant.small_ex_1));
 //        Scanner sc = new Scanner(new File(Constant.small_ex_2));
 //        Scanner sc = new Scanner(new File(Constant.small_ex_3));
-        Scanner sc = new Scanner(new File(Constant.small_example_for_operators));
+        Scanner sc = new Scanner(new File(Constant.small_ex_4));
 
         ArrayList<String> listOfPremises = new ArrayList<>();
         LinkedList<String> normalAndCNFResults = new LinkedList<>();
